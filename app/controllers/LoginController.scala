@@ -13,6 +13,7 @@ import play.api.libs.ws._
 import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
+import play.api.libs.json.Json
 import play.api.libs.openid._
 
 import scala.util.matching.Regex
@@ -55,8 +56,9 @@ class LoginController @Inject() (ws:WSClient)(openIdClient: OpenIdClient) extend
         obtainSteamUserInfo(steamId).map(
             userInfo => {
               Logger.info(s"got user info ${userInfo}")
+              implicit val userInfoWrites = Json.writes[SteamUserInfo]
               Redirect(routes.HomeController.index())
-                .withSession("steamId" -> steamId)
+                .withSession("steamUserInfo" -> Json.toJson(userInfo).toString())
             })
       })
   }

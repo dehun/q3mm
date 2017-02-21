@@ -1,9 +1,6 @@
 package controllers
 
-object SteamUserInfo {
-
-}
-
+import play.api.libs.json._
 
 case class SteamUserInfo(steamId:String,
                          personaName:String,
