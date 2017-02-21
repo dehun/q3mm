@@ -1,9 +1,4 @@
 package controllers
-
-import javax.inject._
-
-import play.api._
-import play.api.mvc._
 import javax.inject.Inject
 
 import scala.concurrent.Future
@@ -11,13 +6,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import play.api._
 import play.api.libs.ws._
 import play.api.mvc._
-import play.api.data._
-import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.api.libs.openid._
 
 import scala.util.matching.Regex
-
 
 class LoginController @Inject() (ws:WSClient)(openIdClient: OpenIdClient) extends Controller {
   val steamAppKey = "9075032A4866A875DCA3772C0004C665"

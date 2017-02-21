@@ -1,7 +1,9 @@
 package controllers
 
 import javax.inject._
+
 import play.api._
+import play.api.libs.json.Json
 import play.api.mvc._
 
 /**
@@ -18,7 +20,12 @@ class HomeController @Inject() extends Controller {
    * a path of `/`.
    */
   def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+    request => {
+      implicit val reads = Json.reads[SteamUserInfo]
+      Ok(views.html.index(
+        request.session.get("steamUserInfo").flatMap(v =>
+          Json.fromJson[SteamUserInfo](Json.parse(v)).asOpt)))
+    }
   }
 
 }
