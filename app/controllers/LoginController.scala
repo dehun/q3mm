@@ -50,7 +50,7 @@ class LoginController @Inject() (ws:WSClient)(openIdClient: OpenIdClient) extend
               Logger.info(s"got user info ${userInfo}")
               implicit val userInfoWrites = Json.writes[SteamUserInfo]
               Redirect(routes.HomeController.index())
-                .withSession("steamUserInfo" -> Json.toJson(userInfo).toString())
+                .withSession("steamUserInfo" -> SteamUserInfo.asJson(userInfo).toString())
             })
       })
   }

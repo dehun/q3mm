@@ -24,7 +24,7 @@ class HomeController @Inject() extends Controller {
       implicit val reads = Json.reads[SteamUserInfo]
       Ok(views.html.index(
         request.session.get("steamUserInfo").flatMap(v =>
-          Json.fromJson[SteamUserInfo](Json.parse(v)).asOpt)))
+          SteamUserInfo.fromJson(v))))
     }
   }
 
