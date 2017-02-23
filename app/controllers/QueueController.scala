@@ -81,7 +81,7 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo) extends Actor
   override def receive: Receive = {
     case msgJs:String =>
       val msg = QueueMessages.deserialize(msgJs)
-      Logger.info(s"received ${msg}")
+      Logger.info(s"received $msg")
   }
 
   override def postStop(): Unit = {
@@ -93,9 +93,12 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo) extends Actor
     implicit val timeout = Timeout(60 seconds)
     out ! QueueMessages.serialize(QueueMessages.Enqueued())
     val res = ask(queueProxy, ("enqueue", userInfo))
-    res.map({case ("challenge") => out ! QueueMessages.serialize(QueueMessages.NewChallenge("nowhere"))})
+    res.map({case ("challenge", server) =>
+      Logger.info(s"got challenge at $server")
+      out ! QueueMessages.serialize(QueueMessages.NewChallenge("nowhere"))
+    })
       .recover { case _ =>
-        out ! QueueMessages.NoCompetition()
+        out ! QueueMessages.serialize(QueueMessages.NoCompetition())
         out ! PoisonPill
       }
   }
