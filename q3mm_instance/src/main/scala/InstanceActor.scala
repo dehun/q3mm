@@ -1,8 +1,5 @@
-package main.scala
+import akka.actor._
 
-/**
-  * Created by dehun on 2/24/17.
-  */
-class InstanceActor {
+class InstanceActor extends Actor {
 
 }

@@ -1,6 +1,7 @@
-/**
-  * Created by dehun on 2/24/17.
-  */
-class Main {
+import akka.actor._
 
+object Main extends App {
+  val system = ActorSystem("q3mm")
+  system.actorOf(Props[InstanceMasterActor], name = "instanceMaster")
+  Console.println("hello world!")
 }

@@ -4,6 +4,8 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 lazy val q3mm_queue = project.dependsOn(root)
+lazy val q3mm_instanceMaster = project.dependsOn(root)
+lazy val q3mm_instance = project.dependsOn(root)
 
 scalaVersion := "2.11.7"
 
