@@ -20,20 +20,25 @@ import play.api.libs.streams.ActorFlow
 import scala.concurrent.duration._
 
 class QueueController @Inject() (implicit system: ActorSystem, materializer: Materializer) extends Controller {
-  def queueSocket = WebSocket.acceptOrResult[String, String] { request =>
-    Future.successful(request.session.get("steamUserInfo") match {
-      case None => Left(Forbidden)
-      case Some(userInfoJs) =>
-        SteamUserInfo.fromJson(userInfoJs).map(
-          userInfo => {
-            Logger.info(s"creating websocket for ${userInfo}")
-            Right(ActorFlow.actorRef(out => QueueWebSocketAcceptor.props(out, userInfo)))
-          })
-          .orElse({
-            Logger.info("access denied - can not parse SteamUserInfo")
-            Some(Left(Forbidden))
-          }).get
-    })
+  def queueSocket = {
+    WebSocket.acceptOrResult[String, String] { case request =>
+      Future.successful(request.session.get("steamUserInfo") match {
+        case None => {
+          Logger.info(s"can not get steamUserInfo, forbid access, session is ${request.session.data}")
+          Left(Forbidden.withNewSession)
+        }
+        case Some(userInfoJs) =>
+          SteamUserInfo.fromJson(userInfoJs).map(
+            userInfo => {
+              Logger.info(s"creating websocket for ${userInfo}")
+              Right(ActorFlow.actorRef(out => QueueWebSocketAcceptor.props(out, userInfo)))
+            })
+            .orElse({
+              Logger.info("access denied - can not parse SteamUserInfo")
+              Some(Left(Forbidden.withNewSession))
+            }).get
+      })
+    }
   }
 }
 
@@ -75,8 +80,9 @@ object QueueWebSocketAcceptor {
 }
 
 class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo) extends Actor {
-  val remoteQueuePath = "akka.tcp://q3mm@127.0.0.1:2552/user/queue"
+  val remoteQueuePath = context.system.settings.config.getString("q3mm.queueUri")
   val queueProxy = context.actorSelection(remoteQueuePath)
+
 
   override def receive: Receive = {
     case msgJs:String =>

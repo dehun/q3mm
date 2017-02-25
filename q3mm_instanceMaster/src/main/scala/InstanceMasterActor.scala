@@ -27,7 +27,7 @@ class InstanceMasterActor extends Actor {
         randomSlave.forward(request)
       } else {
         log.error(s"no slave to satisfy creation request")
-        sender() ! "failed"
+        sender() ! ("failed", "not enough slaves")
       }
   }
 }

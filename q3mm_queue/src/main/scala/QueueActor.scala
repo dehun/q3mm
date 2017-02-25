@@ -10,7 +10,7 @@ import controllers.SteamUserInfo
 class QueueActor extends Actor {
   private val log = Logging(context.system, this)
   private val instanceCreationTimeout = 360 seconds
-  private val remoteInstanceMasterPath = "akka.tcp://q3mm@127.0.0.1:2560/user/instanceMaster"
+  private val remoteInstanceMasterPath = context.system.settings.config.getString("q3mm.instanceMasterUri")
   private val instanceMasterProxy = context.actorSelection(remoteInstanceMasterPath)
 
   private case class GameRequest(userInfo:SteamUserInfo, requester:ActorRef)

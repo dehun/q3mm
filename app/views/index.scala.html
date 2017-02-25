@@ -1,4 +1,4 @@
-@(userinfo: Option[SteamUserInfo])
+@(userinfo: Option[SteamUserInfo], wsUrl:String)
 
 <html>
 <head>
@@ -10,7 +10,7 @@
     <script>
 function queueWsConnect() {
 var socket;
-var host = "ws://localhost:9000/queue";
+var host = "@wsUrl";
 
 try{
 var socket = new WebSocket(host);

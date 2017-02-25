@@ -11,7 +11,7 @@ import play.api.mvc._
  * application's home page.
  */
 @Singleton
-class HomeController @Inject() extends Controller {
+class HomeController  @Inject() (configuration: play.api.Configuration) extends Controller {
 
   /**
    * Create an Action to render an HTML page with a welcome message.
@@ -24,7 +24,8 @@ class HomeController @Inject() extends Controller {
       implicit val reads = Json.reads[SteamUserInfo]
       Ok(views.html.index(
         request.session.get("steamUserInfo").flatMap(v =>
-          SteamUserInfo.fromJson(v))))
+          SteamUserInfo.fromJson(v)),
+        configuration.underlying.getString("q3mm.wsUrl")))
     }
   }
 
