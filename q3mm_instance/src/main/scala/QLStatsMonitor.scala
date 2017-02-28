@@ -1,7 +1,8 @@
 import akka.actor.Actor.Receive
 import akka.actor._
 import akka.event.Logging
-import org.zeromq.ZMQ
+import org.zeromq.{ZMQ, ZMQException}
+
 
 //TODO: move to separate library
 abstract class QLStatsMonitorActor(endpoints:QLServer.Endpoints) extends Actor {
@@ -17,6 +18,8 @@ abstract class QLStatsMonitorActor(endpoints:QLServer.Endpoints) extends Actor {
 
   def worker = {
     try {
+      zmqsocket.setPlainUsername("stats".getBytes())
+      zmqsocket.setPlainPassword(endpoints.statsPassword.getBytes())
       zmqsocket.connect(s"tcp://${endpoints.interface}:${endpoints.gamePort}")
       zmqsocket.subscribe("".getBytes())
       while (!stopping) {
@@ -24,12 +27,17 @@ abstract class QLStatsMonitorActor(endpoints:QLServer.Endpoints) extends Actor {
         log.info(s"QLStatsMonitor received stats event ${buf}")
         context.self ! ("stats_event", buf)
       }
+    } catch {
+      case ex: ZMQException =>
+        log.error("error in QLStatsMonitor ${ex.toString}")
+        onFailure()
     } finally {
       zmqsocket.close()
       zmqcontext.term()
     }
   }
 
+  def onFailure():Unit
 
   @scala.throws[Exception](classOf[Exception])
   override def postStop(): Unit = {

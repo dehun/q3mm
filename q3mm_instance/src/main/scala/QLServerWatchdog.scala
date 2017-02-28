@@ -1,6 +1,6 @@
 import QLServer.Endpoints
 import akka.actor.Actor.Receive
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, PoisonPill}
 
 class QLServerWatchdog(endpoints: Endpoints, server:ActorRef) extends QLStatsMonitorActor(endpoints) {
   override def receive: Receive = {
@@ -8,5 +8,9 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef) extends QLStatsMon
       handle_stats_event(stats_event)
   }
 
-  private def handle_stats_event(stats_event:String):Unit = ???
+  private def handle_stats_event(stats_event:String):Unit = ??? // TODO: implement me! at the moment not needed
+
+  private def terminateServer() = server ! PoisonPill
+
+  override def onFailure(): Unit = terminateServer()
 }

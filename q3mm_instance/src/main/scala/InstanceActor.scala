@@ -28,9 +28,8 @@ class InstanceActor extends Actor {
       val server = QLServer.spawn(context, endpoints, leftUser, rightUser)
       // spawn watchdog
       val watchdog = context.actorOf(Props(new QLServerWatchdog(endpoints, server)))
-
+      //
       servers += ((server, watchdog))
-      // reply with url
       sender() ! ("created", endpoints.url)
 
     case ("good_doggie") =>
