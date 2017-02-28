@@ -1,0 +1,12 @@
+---
+- name: build queue
+  local_action: shell cd .. && sbt "project q3mm_queue" dist
+
+- name: build instance
+  local_action: shell cd .. && sbt "project q3mm_instance" dist
+
+- name: build instanceMaster
+  local_action:  shell cd .. && sbt "project q3mm_instanceMaster" dist
+
+- name: build instanceMaster
+  local_action: shell cd .. && sbt dist    

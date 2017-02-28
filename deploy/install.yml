@@ -1,0 +1,11 @@
+---
+- name: install q3mm modules
+  hosts: all
+  user: root
+  became: yes
+  roles:
+    - q3mm_front_install
+    - q3mm_queue_install
+    - q3mm_instanceMaster_install
+    - q3mm_instance_install
+    
