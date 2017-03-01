@@ -9,7 +9,7 @@ import scala.util.Random
 
 object QLServer {
   case class Endpoints(interface:String, gamePort:Int, rconPort:Int, rconPassword:String, statsPassword:String) {
-    val url:String = s"steam://connect/$interface:$gamePort" // TODO: password!
+    val url:String = s"steam://connect/$interface:$gamePort"
   }
   object Endpoints {
     def random(interface:String) = Endpoints(
@@ -22,17 +22,17 @@ object QLServer {
 
   def spawn(context: ActorContext, endpoints: Endpoints,
             leftUser:SteamUserInfo, rightUser:SteamUserInfo):ActorRef = {
-    val cwd = new File("/home/steam/.steam/steamcmd/steamapps/common/qlds")
-    val cmdLine = s"""exec ./run_server_x86.sh \
-                     |+set net_strict 1 \
-                     |+set sv_lan 1
-                     |+set net_port ${endpoints.gamePort} \
-                     |+set sv_hostname "q3mm server" \
-                     |+set zmq_rcon_enable 1 \
-                     |+set zmq_rcon_password ${endpoints.rconPassword} \
-                     |+set zmq_rcon_port ${endpoints.rconPort} \
-                     |+set zmq_stats_enable 1 \
-                     |+set zmq_stats_password ${endpoints.statsPassword} \
+    val cwd = new File(context.system.settings.config.getString("qlServerDir"))
+    val cmdLine = s"""./run_server_x86.sh \\
+                     |+set net_strict 1 \\
+                     |+set sv_lan 1 \\
+                     |+set net_port ${endpoints.gamePort} \\
+                     |+set sv_hostname "q3mm server" \\
+                     |+set zmq_rcon_enable 1 \\
+                     |+set zmq_rcon_password ${endpoints.rconPassword} \\
+                     |+set zmq_rcon_port ${endpoints.rconPort} \\
+                     |+set zmq_stats_enable 1 \\
+                     |+set zmq_stats_password ${endpoints.statsPassword} \\
                      |+set zmq_stats_port ${endpoints.gamePort}""".stripMargin
 
     val proc = Process(cmdLine, cwd).run()

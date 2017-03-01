@@ -2,6 +2,8 @@ import QLServer.Endpoints
 import akka.actor.Actor.Receive
 import akka.actor.{ActorRef, PoisonPill}
 
+import scala.util.parsing.json.JSON
+
 class QLServerWatchdog(endpoints: Endpoints, server:ActorRef) extends QLStatsMonitorActor(endpoints) {
   override def receive: Receive = {
     case ("stats_event", stats_event:String) =>
