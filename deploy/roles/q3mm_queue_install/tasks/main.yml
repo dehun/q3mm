@@ -1,0 +1,11 @@
+---
+- name: make installation folder
+  file:
+    path: ~/q3mm
+    state: directory
+
+- name: upload q3mm queue
+  unarchive:
+    copy: yes
+    dest: ~/q3mm/
+    src: ../q3mm_queue/target/universal/q3mm_queue-1.0-SNAPSHOT.zip  

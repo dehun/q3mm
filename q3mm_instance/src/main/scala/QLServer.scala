@@ -2,6 +2,7 @@ import java.io.File
 
 import akka.actor.{Actor, ActorContext, ActorRef, ActorSystem, Props}
 import akka.actor.Actor.Receive
+import akka.event.Logging
 import controllers.SteamUserInfo
 
 import scala.sys.process._
@@ -22,7 +23,9 @@ object QLServer {
 
   def spawn(context: ActorContext, endpoints: Endpoints,
             leftUser:SteamUserInfo, rightUser:SteamUserInfo):ActorRef = {
-    val cwd = new File(context.system.settings.config.getString("qlServerDir"))
+    val cwd = new File(context.system.settings.config.getString("q3mm.qlServerDir"))
+    val log = Logging(context.system, context.self)
+    log.info("spawning new server!")
     val cmdLine = s"""./run_server_x86.sh \\
                      |+set net_strict 1 \\
                      |+set sv_lan 1 \\

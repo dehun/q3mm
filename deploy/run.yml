@@ -1,0 +1,11 @@
+---
+- name: run q3mm
+  hosts: all
+  user: root
+  become: yes
+  roles:
+    - q3mm_daemon_install
+    - q3mm_front_run
+    - q3mm_queue_run
+    - q3mm_instanceMaster_run
+    - q3mm_instance_run

@@ -1,0 +1,40 @@
+---
+- name: make installation folder
+  file:
+    path: ~/q3mm
+    state: directory
+
+- name: upload q3mm instance
+  unarchive:
+    copy: yes
+    dest: ~/q3mm/
+    src: ../q3mm_instance/target/universal/q3mm_instance-1.0-SNAPSHOT.zip
+
+- stat: path=~/Steam/steamcmd
+  register: steam_cmd
+
+- name: make steamcmd dir
+  when: steam_cmd.exists == False
+  file:
+    path: ~/Steam/
+    state: directory
+
+- name: install steamcmd deps
+  apt:
+    name: lib32gcc1
+    state: latest
+
+- name: get steamcmd
+  when: steam_cmd.exists == False
+  shell: cd ~/Steam && curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
+
+- stat: path=~/Steam/steamcmd/steamapps/common/qlds
+  register: steam_cmd
+
+- name: install qlserver
+  when: qlserver.exists == False
+  chdir: ~/Steam
+  shell: ./steamcmd.sh +login anonymous +force_install_dir ./steamapps/common/qlds/ +app_update 349090 +quit 
+
+  
+  
