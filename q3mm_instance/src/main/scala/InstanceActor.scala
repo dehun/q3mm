@@ -22,17 +22,24 @@ class InstanceActor extends Actor {
 
   override def receive: Receive = {
     case ("requestServer", leftUser:SteamUserInfo, rightUser:SteamUserInfo) =>
-      log.info("request for server, lets spawn one!")
-      val endpoints = Endpoints.random(context.system.settings.config.getString("q3mm.instanceInterface"), servers.size)
-      // spawn server
-      val server = QLServer.spawn(context, endpoints, leftUser, rightUser)
-      // spawn watchdog
-      val watchdog = context.actorOf(Props(new QLServerWatchdog(endpoints, server)))
-      //
-      servers += ((server, watchdog))
-      sender() ! ("created", endpoints.url)
+      if (servers.size >= context.system.settings.config.getInt("q3mm.maxServers")) {
+        sender() ! ("failed", "overpopulated")
+      } else {
+        log.info(s"request for server, lets spawn one more to ${servers.size}!")
+        val endpoints = Endpoints.random(context.system.settings.config.getString("q3mm.instanceInterface"), servers.size)
+        // spawn server
+        val server = QLServer.spawn(context, endpoints, leftUser, rightUser)
+        // spawn watchdog
+        val watchdog = context.actorOf(Props(new QLServerWatchdog(endpoints, server)))
+        //
+        servers += ((server, watchdog))
+        sender() ! ("created", endpoints.url)
+      }
 
     case ("good_doggie") =>
       log.info("waf waf")
   }
+
+  @scala.throws[Exception](classOf[Exception])
+  override def postStop(): Unit = servers.foreach(_._2 ! PoisonPill)
 }

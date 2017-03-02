@@ -36,7 +36,12 @@ object QLServer {
       "+set", "zmq_rcon_port", s"${endpoints.rconPort}",
       "+set", "zmq_stats_enable", "1",
       "+set", "zmq_stats_password", s"${endpoints.statsPassword}",
-      "+set", "zmq_stats_port", s"${endpoints.gamePort}")
+      "+set", "zmq_stats_port", s"${endpoints.gamePort}",
+      "+set", "g_voteFlags", "0",
+      "+set", "g_dropInactive", "1",
+      "+set", "g_inactivity", "60",
+      "+set", "sv_mapPoolFile", "duel.txt",
+      "+set", "serverstartup", "startRandomMap")
     log.info(s"server cmdline is ${cmdLine}")
     val proc = Process(cmdLine, cwd).run()
     context.actorOf(Props(new QLServer(proc, endpoints, leftUser, rightUser)))
