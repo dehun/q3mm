@@ -1,4 +1,5 @@
 ---
 - name: run q3mm front
-  chdir: ~/q3mm/q3mm-1.0-SNAPSHOT
   shell: daemon -- ./bin/q3mm
+  args:
+    chdir: ~/q3mm/q3mm-1.0-SNAPSHOT

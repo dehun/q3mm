@@ -13,8 +13,11 @@
 - stat: path=~/Steam/steamcmd
   register: steam_cmd
 
+- stat: path=~/Steam/steamcmd/steamapps/common/qlds
+  register: qlserver  
+
 - name: make steamcmd dir
-  when: steam_cmd.exists == False
+  when: steam_cmd.stat.exists == False
   file:
     path: ~/Steam/
     state: directory
@@ -25,16 +28,23 @@
     state: latest
 
 - name: get steamcmd
-  when: steam_cmd.exists == False
-  shell: cd ~/Steam && curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
-
-- stat: path=~/Steam/steamcmd/steamapps/common/qlds
-  register: steam_cmd
+  when: steam_cmd.stat.exists == False
+  shell: curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
+  args:
+    chdir: ~/Steam
 
 - name: install qlserver
-  when: qlserver.exists == False
-  chdir: ~/Steam
+  when: qlserver.stat.exists == False
   shell: ./steamcmd.sh +login anonymous +force_install_dir ./steamapps/common/qlds/ +app_update 349090 +quit 
+  args:
+    chdir: ~/Steam
 
-  
-  
+- name: qlserver deps
+  apt:
+    name: "{{item}}"
+    state: present
+  with_items:
+    - libczmq-dev
+    - lib32z1
+    - g++
+    - libstdc++6:i386

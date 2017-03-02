@@ -83,7 +83,6 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo) extends Actor
   val remoteQueuePath = context.system.settings.config.getString("q3mm.queueUri")
   val queueProxy = context.actorSelection(remoteQueuePath)
 
-
   override def receive: Receive = {
     case msgJs:String =>
       val msg = QueueMessages.deserialize(msgJs)
@@ -99,9 +98,9 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo) extends Actor
     implicit val timeout = Timeout(60 seconds)
     out ! QueueMessages.serialize(QueueMessages.Enqueued())
     val res = ask(queueProxy, ("enqueue", userInfo))
-    res.map({case ("challenge", server) =>
+    res.map({case ("challenge", server:String) =>
       Logger.info(s"got challenge at $server")
-      out ! QueueMessages.serialize(QueueMessages.NewChallenge("nowhere"))
+      out ! QueueMessages.serialize(QueueMessages.NewChallenge(server))
     })
       .recover { case _ =>
         out ! QueueMessages.serialize(QueueMessages.NoCompetition())

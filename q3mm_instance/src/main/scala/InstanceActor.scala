@@ -23,7 +23,7 @@ class InstanceActor extends Actor {
   override def receive: Receive = {
     case ("requestServer", leftUser:SteamUserInfo, rightUser:SteamUserInfo) =>
       log.info("request for server, lets spawn one!")
-      val endpoints = Endpoints.random(context.system.settings.config.getString("q3mm.instanceInterface"))
+      val endpoints = Endpoints.random(context.system.settings.config.getString("q3mm.instanceInterface"), servers.size)
       // spawn server
       val server = QLServer.spawn(context, endpoints, leftUser, rightUser)
       // spawn watchdog

@@ -1,4 +1,6 @@
 ---
 - name: run q3mm instanceMaster
-  chdir: ~/q3mm/q3mm_instancemaster-1.0-SNAPSHOT
   shell: daemon -- ./bin/q3mm_instancemaster
+  args:
+    chdir: ~/q3mm/q3mm_instancemaster-1.0-SNAPSHOT
+

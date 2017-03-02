@@ -13,9 +13,9 @@ object QLServer {
     val url:String = s"steam://connect/$interface:$gamePort"
   }
   object Endpoints {
-    def random(interface:String) = Endpoints(
+    def random(interface:String, serverIndex:Int) = Endpoints(
       interface,
-      1024 + Random.nextInt(32768),
+      27960 + serverIndex,
       1024 + Random.nextInt(32768),
       Random.alphanumeric.take(10).mkString,
       Random.alphanumeric.take(10).mkString)
@@ -25,26 +25,30 @@ object QLServer {
             leftUser:SteamUserInfo, rightUser:SteamUserInfo):ActorRef = {
     val cwd = new File(context.system.settings.config.getString("q3mm.qlServerDir"))
     val log = Logging(context.system, context.self)
-    log.info("spawning new server!")
-    val cmdLine = s"""./run_server_x86.sh \\
-                     |+set net_strict 1 \\
-                     |+set sv_lan 1 \\
-                     |+set net_port ${endpoints.gamePort} \\
-                     |+set sv_hostname "q3mm server" \\
-                     |+set zmq_rcon_enable 1 \\
-                     |+set zmq_rcon_password ${endpoints.rconPassword} \\
-                     |+set zmq_rcon_port ${endpoints.rconPort} \\
-                     |+set zmq_stats_enable 1 \\
-                     |+set zmq_stats_password ${endpoints.statsPassword} \\
-                     |+set zmq_stats_port ${endpoints.gamePort}""".stripMargin
-
+    log.info(s"spawning new server! $endpoints")
+    val cmdLine = Seq("./run_server_x86.sh",
+      "+set", "net_strict", "1",
+      "+set", "net_ip", s"${endpoints.interface}",
+      "+set", "net_port", s"${endpoints.gamePort}",
+      "+set", "sv_hostname", "q3mm server",
+      "+set", "zmq_rcon_enable", "1",
+      "+set", "zmq_rcon_password", s"${endpoints.rconPassword}",
+      "+set", "zmq_rcon_port", s"${endpoints.rconPort}",
+      "+set", "zmq_stats_enable", "1",
+      "+set", "zmq_stats_password", s"${endpoints.statsPassword}",
+      "+set", "zmq_stats_port", s"${endpoints.gamePort}")
+    log.info(s"server cmdline is ${cmdLine}")
     val proc = Process(cmdLine, cwd).run()
     context.actorOf(Props(new QLServer(proc, endpoints, leftUser, rightUser)))
   }
 }
 
 class QLServer(process:Process, val endpoints:QLServer.Endpoints, leftUser:SteamUserInfo, rightUser:SteamUserInfo) extends Actor {
-  override def receive: Receive = ???
+  val log = Logging(context.system, this)
+
+  override def receive: Receive = {
+    case x => log.info(s"received ${x}, but should not...")
+  }
 
   override def postStop(): Unit = process.destroy()
 }

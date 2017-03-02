@@ -20,7 +20,7 @@ var socket = new WebSocket(host);
  }
 
  socket.onmessage = function(msg){
-    alert("ws received" + JSON.strinfigy(msg));
+    alert("ws received" + JSON.stringify(msg));
  }
 
  socket.onclose = function(){
