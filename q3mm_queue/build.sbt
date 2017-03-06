@@ -9,7 +9,9 @@ scalaVersion := "2.11.7"
 
 libraryDependencies ++=
   Seq("com.typesafe.akka" %% "akka-actor" % "2.4.17",
-    "com.typesafe.akka" %% "akka-remote" % "2.4.17")
+    "com.typesafe.akka" %% "akka-remote" % "2.4.17",
+    "com.typesafe.akka" %% "akka-http-core" % "10.0.4",
+    "com.typesafe.akka" %% "akka-http" % "10.0.4")
 
 import NativePackagerHelper._
 

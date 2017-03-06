@@ -5,7 +5,7 @@ import akka.event.Logging
 
 import scala.util.parsing.json.JSON
 
-class QLServerWatchdog(endpoints: Endpoints, server:ActorRef) extends QLStatsMonitorActor(endpoints) {
+class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int, supervisor:ActorRef) extends QLStatsMonitorActor(endpoints) {
   private val log = Logging(context.system, this)
 
   override def receive: Receive = {
@@ -19,7 +19,10 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef) extends QLStatsMon
 
   private def terminateServer() = server ! PoisonPill
 
-  override def onFailure(): Unit = terminateServer()
+  override def onFailure(): Unit = {
+    terminateServer()
+    supervisor ! ("serverExit", "died", serverIndex)
+  }
 
   @scala.throws[Exception](classOf[Exception]) override
   def postStop(): Unit = terminateServer()

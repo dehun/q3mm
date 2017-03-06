@@ -48,3 +48,9 @@
     - lib32z1
     - g++
     - libstdc++6:i386
+
+- name: copy maplist
+  copy:
+    src: ../q3mm_instance/src/main/resources/duel.txt
+    dest: ~/Steam/steamapps/common/qlds/duel.txt
+    

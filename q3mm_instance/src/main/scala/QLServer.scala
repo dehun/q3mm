@@ -1,6 +1,8 @@
 import java.io.File
+import java.nio.file.{Files, Path, Paths}
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
-import akka.actor.{Actor, ActorContext, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorContext, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.actor.Actor.Receive
 import akka.event.Logging
 import controllers.SteamUserInfo
@@ -23,7 +25,14 @@ object QLServer {
 
   def spawn(context: ActorContext, endpoints: Endpoints,
             leftUser:SteamUserInfo, rightUser:SteamUserInfo):ActorRef = {
+    // prepare dirs
     val cwd = new File(context.system.settings.config.getString("q3mm.qlServerDir"))
+    val fspath = new File(cwd.getPath.concat(s"/${endpoints.gamePort.toString}"))
+    new File(fspath, "baseq3") mkdirs()
+    Files.copy(
+      Paths.get(cwd.getPath.concat("/duel.txt")),
+      Paths.get(fspath.getPath.concat("/baseq3/duel.txt")), REPLACE_EXISTING)
+    // spawn
     val log = Logging(context.system, context.self)
     log.info(s"spawning new server! $endpoints")
     val cmdLine = Seq("./run_server_x86.sh",
@@ -40,6 +49,9 @@ object QLServer {
       "+set", "g_voteFlags", "0",
       "+set", "g_dropInactive", "1",
       "+set", "g_inactivity", "60",
+      "+set", "g_allowVoteMidGame", "0",
+      "+set", "g_allowSpecVote", "0",
+      "+set", "fs_homepath", s"${cwd.toPath.toString}/${endpoints.gamePort}",
       "+set", "sv_mapPoolFile", "duel.txt",
       "+set", "serverstartup", "startRandomMap")
     log.info(s"server cmdline is ${cmdLine}")
@@ -50,10 +62,22 @@ object QLServer {
 
 class QLServer(process:Process, val endpoints:QLServer.Endpoints, leftUser:SteamUserInfo, rightUser:SteamUserInfo) extends Actor {
   val log = Logging(context.system, this)
+  val processWatchdog = new Thread(new Runnable {
+    override def run() = {
+      log.info(s"watching process ${process}")
+      val exitValue = process.exitValue()
+      log.info(s"ql server exited with code ${exitValue}, terminating responsible actor")
+      self ! PoisonPill
+    }
+  })
+  processWatchdog.start()
 
   override def receive: Receive = {
     case x => log.info(s"received ${x}, but should not...")
   }
 
-  override def postStop(): Unit = process.destroy()
+  override def postStop(): Unit = {
+    log.info(s"actor death, killing process $process")
+    process.destroy()
+  }
 }

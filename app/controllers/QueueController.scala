@@ -10,34 +10,47 @@ import akka.pattern.ask
 import akka.stream._
 import akka.util.Timeout
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api._
 import play.api.libs.ws._
 import play.api.mvc._
 import play.api.libs.json.Json
 import play.api.libs.streams.ActorFlow
-import scala.concurrent.duration._
 
-class QueueController @Inject() (implicit system: ActorSystem, materializer: Materializer) extends Controller {
+import scala.concurrent.duration._
+import scala.util.{Success, Try}
+
+class QueueController @Inject() (ws:WSClient)(implicit system: ActorSystem, materializer: Materializer) extends Controller {
+  def getGlicko(steamId:String):Future[Double] = {
+    val url = s"http://qlstats.net/player/${steamId}.json"
+    val request = ws.url(url)
+    Logger.info(s"getting glicko from ${url}")
+    return request.get().map(response => {
+      (Try((response.json \ 0 \ "elos" \ "duel" \ "g2_r").as[Double])).getOrElse(0.0)
+    })
+  }
+
   def queueSocket = {
     WebSocket.acceptOrResult[String, String] { case request =>
-      Future.successful(request.session.get("steamUserInfo") match {
+      request.session.get("steamUserInfo") match {
         case None => {
           Logger.info(s"can not get steamUserInfo, forbid access, session is ${request.session.data}")
-          Left(Forbidden.withNewSession)
+          Future.successful(Left(Forbidden.withNewSession))
         }
         case Some(userInfoJs) =>
           SteamUserInfo.fromJson(userInfoJs).map(
             userInfo => {
               Logger.info(s"creating websocket for ${userInfo}")
-              Right(ActorFlow.actorRef(out => QueueWebSocketAcceptor.props(out, userInfo)))
-            })
+              getGlicko(userInfo.steamId).map(glicko => {
+                Logger.info(s"got glicko ${glicko} for user ${userInfo.steamId}")
+                Right(ActorFlow.actorRef(out => QueueWebSocketAcceptor.props(out, userInfo, glicko)))
+            })})
             .orElse({
               Logger.info("access denied - can not parse SteamUserInfo")
-              Some(Left(Forbidden.withNewSession))
+              Some(Future.successful(Left(Forbidden.withNewSession)))
             }).get
-      })
+      }
     }
   }
 }
@@ -76,10 +89,10 @@ object QueueMessages {
 
 
 object QueueWebSocketAcceptor {
-  def props(out: ActorRef, userInfo:SteamUserInfo) = Props(new QueueWebSocketAcceptor(out, userInfo))
+  def props(out: ActorRef, userInfo:SteamUserInfo, glicko:Double) = Props(new QueueWebSocketAcceptor(out, userInfo, glicko))
 }
 
-class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo) extends Actor {
+class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo, glicko:Double) extends Actor {
   val remoteQueuePath = context.system.settings.config.getString("q3mm.queueUri")
   val queueProxy = context.actorSelection(remoteQueuePath)
 
@@ -97,7 +110,7 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo) extends Actor
   override def preStart(): Unit = {
     implicit val timeout = Timeout(60 seconds)
     out ! QueueMessages.serialize(QueueMessages.Enqueued())
-    val res = ask(queueProxy, ("enqueue", userInfo))
+    val res = ask(queueProxy, ("enqueue", userInfo, glicko))
     res.map({case ("challenge", server:String) =>
       Logger.info(s"got challenge at $server")
       out ! QueueMessages.serialize(QueueMessages.NewChallenge(server))

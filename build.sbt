@@ -16,5 +16,7 @@ libraryDependencies ++= Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
   "com.typesafe.akka" %% "akka-actor" % "2.4.17",
   "com.typesafe.akka" %% "akka-remote" % "2.4.17",
-  "org.zeromq" % "jzmq" % "3.1.0"
+  "org.zeromq" % "jzmq" % "3.1.0",
+  "com.typesafe.akka" %% "akka-http-core" % "10.0.4",
+  "com.typesafe.akka" %% "akka-http" % "10.0.4"
 )
