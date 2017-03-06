@@ -1,11 +1,6 @@
 import akka.actor._
 import akka.event.Logging
-import akka.http.javadsl.unmarshalling.Unmarshaller
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse}
 import akka.pattern.ask
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.Timeout
 
 import scala.util._
@@ -21,7 +16,7 @@ class QueueActor extends Actor {
   private val remoteInstanceMasterPath = context.system.settings.config.getString("q3mm.instanceMasterUri")
   private val instanceMasterProxy = context.actorSelection(remoteInstanceMasterPath)
 
-  private case class GameRequest(userInfo:SteamUserInfo, glicko:Double, requester:ActorRef)
+  private case class GameRequest(userInfo:SteamUserInfo, glicko:Double, requester:ActorRef, maxGlickoGap:Int)
   private case class Tick()
 
   import context.dispatcher
@@ -32,8 +27,8 @@ class QueueActor extends Actor {
 
   override def receive: Receive = {
     case ("enqueue", steamUserInfo:SteamUserInfo, glicko:Double) =>
-      log.info(s"enqueuing ${steamUserInfo} with glicko ${glicko}")
-      queue += ((steamUserInfo.steamId, GameRequest(steamUserInfo, glicko, sender())))
+      log.info(s"enqueuing ${steamUserInfo} with glicko ${glicko} and max gap ${maxGlickoGap}")
+      queue += ((steamUserInfo.steamId, GameRequest(steamUserInfo, glicko, sender(), maxGlickoGap)))
 
     case ("dequeue", steamId:String) =>
       log.info(s"dequeuing $steamId")
@@ -47,8 +42,9 @@ class QueueActor extends Actor {
         {(acc, pair:(GameRequest, GameRequest)) => acc match {
           case (pairs, true) => (pairs, false)
           case (pairs, false) =>
-            if ((pair._1.glicko - pair._2.glicko).abs < maxGlickoGap)
-              (pair::pairs, true)
+            val glickoGap = (pair._1.glicko - pair._2.glicko).abs
+            if (glickoGap < pair._1.maxGlickoGap && glickoGap < pair._2.maxGlickoGap)
+              (pair::pairs, true) // true - skip next as we already used it
             else
               (pairs, false)
       }})._1

@@ -3,10 +3,12 @@ import akka.actor.Actor.Receive
 import akka.actor._
 import akka.event.Logging
 import akka.util.Timeout
+import akka.pattern.ask
 import controllers.SteamUserInfo
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.{Failure, Success}
 
 class InstanceActor extends Actor {
   private val log = Logging(context.system, this)
@@ -15,9 +17,20 @@ class InstanceActor extends Actor {
   private var servers = Map.empty[Int, (ActorRef, ActorRef)]
 
   @scala.throws[Exception](classOf[Exception])
-  override def preStart(): Unit = {
+  override def preStart(): Unit = connectToMaster()
+
+  private def connectToMaster():Unit = {
+    implicit val timeout = Timeout(10 seconds)
+    implicit val executionContext = context.system.dispatcher
     val instanceMasterProxy = context.actorSelection(masterUri)
-    instanceMasterProxy ! "i_wanna_be_your_dog"
+    ask(instanceMasterProxy, "i_wanna_be_your_dog").onComplete({
+      case Success("good_doggie") =>
+        log.info("waf waf")
+      case Failure(ex) =>
+        log.error(ex, "fatality, can not connect to master, retrying")
+        connectToMaster()
+      case _ => ???
+    })
   }
 
   override def receive: Receive = {
@@ -42,10 +55,6 @@ class InstanceActor extends Actor {
     case ("serverExit", reason, idx:Int) =>
       log.info(s"server ${idx} exited with reason ${reason}")
       servers -= idx
-
-
-    case ("good_doggie") =>
-      log.info("waf waf")
   }
 
   @scala.throws[Exception](classOf[Exception])
