@@ -14,7 +14,10 @@ class InstanceActor extends Actor {
   private val log = Logging(context.system, this)
   private val masterUri = context.system.settings.config.getString("q3mm.instanceMasterUri")
   private implicit val timeout = Timeout(5 seconds)
+  private val maxServers = context.system.settings.config.getInt("q3mm.maxServers")
   private var servers = Map.empty[Int, (ActorRef, ActorRef)]
+
+  private val instanceMasterProxy = context.actorSelection(masterUri)
 
   @scala.throws[Exception](classOf[Exception])
   override def preStart(): Unit = connectToMaster()
@@ -22,8 +25,8 @@ class InstanceActor extends Actor {
   private def connectToMaster():Unit = {
     implicit val timeout = Timeout(10 seconds)
     implicit val executionContext = context.system.dispatcher
-    val instanceMasterProxy = context.actorSelection(masterUri)
-    ask(instanceMasterProxy, "i_wanna_be_your_dog").onComplete({
+
+    ask(instanceMasterProxy, ("i_wanna_be_your_dog", self, maxServers)).onComplete({
       case Success("good_doggie") =>
         log.info("waf waf")
       case Failure(ex) =>
@@ -35,8 +38,9 @@ class InstanceActor extends Actor {
 
   override def receive: Receive = {
     case ("requestServer", leftUser:SteamUserInfo, rightUser:SteamUserInfo) =>
-      if (servers.size >= context.system.settings.config.getInt("q3mm.maxServers")) {
+      if (servers.size >= maxServers) {
         log.warning("failing server creation request: overpopulated")
+        instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
         sender() ! ("failed", "overpopulated")
       } else {
         val serverIndex = if (servers.isEmpty) 0 else List(servers.keys.min - 1, servers.keys.max + 1).filter(_ > 0).min
@@ -49,12 +53,14 @@ class InstanceActor extends Actor {
         //
         assert(servers.get(serverIndex).isEmpty)
         servers = servers.updated(serverIndex, (server, watchdog))
+        instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
         sender() ! ("created", endpoints.url)
       }
 
     case ("serverExit", reason, idx:Int) =>
       log.info(s"server ${idx} exited with reason ${reason}")
       servers -= idx
+      instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
   }
 
   @scala.throws[Exception](classOf[Exception])

@@ -11,14 +11,15 @@ import scala.sys.process._
 import scala.util.Random
 
 object QLServer {
-  case class Endpoints(interface:String, gamePort:Int, rconPort:Int, rconPassword:String, statsPassword:String) {
-    val url:String = s"steam://connect/$interface:$gamePort"
+  case class Endpoints(interface:String, gamePort:Int, rconPort:Int, rconPassword:String, statsPassword:String, gamePassword:String) {
+    val url:String = s"steam://connect/$interface:$gamePort/$gamePassword"
   }
   object Endpoints {
     def random(interface:String, serverIndex:Int) = Endpoints(
       interface,
       27960 + serverIndex,
       1024 + Random.nextInt(32768),
+      Random.alphanumeric.take(10).mkString,
       Random.alphanumeric.take(10).mkString,
       Random.alphanumeric.take(10).mkString)
   }
@@ -46,6 +47,7 @@ object QLServer {
       "+set", "zmq_stats_enable", "1",
       "+set", "zmq_stats_password", s"${endpoints.statsPassword}",
       "+set", "zmq_stats_port", s"${endpoints.gamePort}",
+      "+set", "g_password", s"${endpoints.gamePassword}",
       "+set", "g_voteFlags", "0",
       "+set", "g_dropInactive", "1",
       "+set", "g_inactivity", "60",
