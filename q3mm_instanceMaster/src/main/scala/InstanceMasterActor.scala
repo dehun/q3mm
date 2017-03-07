@@ -15,7 +15,7 @@ class InstanceMasterActor extends Actor {
     case ("i_wanna_be_your_dog", dog:ActorRef, potential:Int) =>
       log.info(s"got new slave ${sender()}")
       workers = workers.updated(dog, WorkerMetaInfo(potential))
-      context.watch(sender())
+      context.watch(dog)
       sender() ! "good_doggie"
 
     case Terminated(deadOne) =>

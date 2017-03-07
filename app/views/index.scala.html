@@ -1,45 +1,13 @@
 @(userinfo: Option[SteamUserInfo], wsUrl:String)
 
-<html>
-<head>
-    <title>q3mm - quake live match maker</title>
-    <script
-			  src="https://code.jquery.com/jquery-3.1.1.min.js"
-			  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
-			  crossorigin="anonymous"></script>
-    <script>
-function queueWsConnect() {
-var socket;
-var host = "@wsUrl";
 
-try{
-var socket = new WebSocket(host);
-
- socket.onopen = function(){
-    alert("ws opened");
- }
-
- socket.onmessage = function(msg){
-    alert("ws received" + JSON.stringify(msg));
- }
-
- socket.onclose = function(){
-     alert("ws closed");
- }
-
- } catch(exception){
-    alert("ws exception" + exception);
- }
-}
-
- $(document).ready(queueWsConnect)
-    </script>
-</head>
-<body>
+@main("match make!") {
   @if(userinfo.isDefined) {
-    hello @userinfo.get.personaName
-  } else {
-     <a href="login">login TBD steam logo</a>
+    <script>
+    var wshost = "@wsUrl";
+    var userName="@userinfo.get.personaName"
+    </script>
+
   }
-</body>
-</html>
+<script src="@routes.Assets.versioned("javascripts/index.js")" type="text/babel"></script>
+}

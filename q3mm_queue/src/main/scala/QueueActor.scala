@@ -37,7 +37,7 @@ class QueueActor extends Actor {
     case Tick() =>
       // select optimal matches
       val sortedPlayers = queue.values.toStream.sortBy(_.glicko).toList
-      val playerPairs = sortedPlayers.zip(sortedPlayers.tail).toList
+      val playerPairs = sortedPlayers.zip(if (sortedPlayers.isEmpty) sortedPlayers else sortedPlayers.tail)
       val matches = playerPairs.foldLeft((List.empty[(GameRequest, GameRequest)], false)) (
         {(acc, pair:(GameRequest, GameRequest)) => acc match {
           case (pairs, true) => (pairs, false)
@@ -67,5 +67,8 @@ class QueueActor extends Actor {
             })
         }
       )
+      // clean up
+    queue = queue.filter(p => matches.exists(
+      m => m._1.userInfo.steamId == p._1 || m._2.userInfo.steamId == p._1))
   }
 }
