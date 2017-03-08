@@ -19,15 +19,15 @@ import play.api.libs.json.Json
 import play.api.libs.streams.ActorFlow
 
 import scala.concurrent.duration._
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 class QueueController @Inject() (ws:WSClient)(implicit system: ActorSystem, materializer: Materializer) extends Controller {
   def getGlicko(steamId:String):Future[Double] = {
     val url = s"http://qlstats.net/player/${steamId}.json"
     val request = ws.url(url)
     Logger.info(s"getting glicko from ${url}")
-    return request.get().map(response => {
-      (Try((response.json \ 0 \ "elos" \ "duel" \ "g2_r").as[Double])).getOrElse(0.0)
+    request.get().map(response => {
+      Try((response.json \ 0 \ "elos" \ "duel" \ "g2_r").as[Double]).getOrElse(0.0)
     })
   }
 
@@ -93,8 +93,8 @@ object QueueWebSocketAcceptor {
 }
 
 class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo, glicko:Double) extends Actor {
-  val remoteQueuePath = context.system.settings.config.getString("q3mm.queueUri")
-  val queueProxy = context.actorSelection(remoteQueuePath)
+  private val remoteQueuePath = context.system.settings.config.getString("q3mm.queueUri")
+  private val queueProxy = context.actorSelection(remoteQueuePath)
 
   override def receive: Receive = {
     case msgJs:String =>
@@ -110,14 +110,19 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo, glicko:Double
   override def preStart(): Unit = {
     implicit val timeout = Timeout(60 seconds)
     out ! QueueMessages.serialize(QueueMessages.Enqueued())
-    val res = ask(queueProxy, ("enqueue", userInfo, glicko))
-    res.map({case ("challenge", server:String) =>
-      Logger.info(s"got challenge at $server")
-      out ! QueueMessages.serialize(QueueMessages.NewChallenge(server))
-    })
-      .recover { case _ =>
+    val res = queueProxy.resolveOne(5 seconds).flatMap(qp => ask(qp, ("enqueue", userInfo, glicko)))
+    res.onComplete({
+      case Success(("challenge", server:String)) =>
+        Logger.info(s"got challenge at $server")
+        out ! QueueMessages.serialize(QueueMessages.NewChallenge(server))
+      case Success(("failed", reason:String)) =>
+        Logger.info(s"failed with $reason")
+        out ! QueueMessages.serialize(QueueMessages.NoCompetition())
+      case Failure(reason) =>
+        Logger.info(s"failed with $reason")
         out ! QueueMessages.serialize(QueueMessages.NoCompetition())
         out ! PoisonPill
-      }
+      case _ => ???
+    })
   }
 }

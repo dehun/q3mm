@@ -29,7 +29,7 @@ var ConnectToServer = React.createClass({
     render: function() {
         setTimeout(function() {
             window.location.replace(this.props.server)
-        }, 5000)
+        }, 3000)
         return (
                 <div id="connect_to_server">
                   <div id="server_description">
@@ -72,8 +72,10 @@ var MatchMakeStartBox = React.createClass({
         }
     },
     onWsMessage: function(msgs) {
-        console.log(msgs)
-        console.log(msgs.data)
+        if (msgs.type == 'open') {
+            this.onWsOpen();
+            return;
+        }
         if (typeof msgs.data == 'undefined') return
         msg = JSON.parse(msgs.data)
         switch (msgs.cmd) {
@@ -95,8 +97,10 @@ var MatchMakeStartBox = React.createClass({
                     onWsOpen={this.onWsOpen} onWsClosed={this.onWsClosed} onWsOpen={this.onWsMessage}/>)
         case "connecting":
             return (<MatchMakeState state="connecting"/>)
+        case "connected":
+            return (<MatchMakeState state="awaiting server state"/>)
         case "enqueued":
-            return (<MatchMakeState state="enqueued"/>)
+            return (<MatchMakeState state="awaiting challenge"/>)
         case "newChallenge":
             return (<ConnectSoServer server={this.state.server}/>)
         case "fail":
@@ -136,8 +140,7 @@ var LoginButton = React.createClass({
     onClick: function() {
         window.location.replace(baseUrl + "/login") 
     }
-});
-
+})
 
 var ContentBox = React.createClass({
     getInitialState: function() {
@@ -150,7 +153,7 @@ var ContentBox = React.createClass({
             return (<LoginBox/>)
         }
     }
-});
+})
 
 ReactDOM.render(
   <ContentBox/>,

@@ -14,6 +14,7 @@ object QLServer {
   case class Endpoints(interface:String, gamePort:Int, rconPort:Int, rconPassword:String, statsPassword:String, gamePassword:String) {
     val url:String = s"steam://connect/$interface:$gamePort/$gamePassword"
   }
+
   object Endpoints {
     def random(interface:String, serverIndex:Int) = Endpoints(
       interface,
@@ -25,7 +26,7 @@ object QLServer {
   }
 
   def spawn(context: ActorContext, endpoints: Endpoints,
-            leftUser:SteamUserInfo, rightUser:SteamUserInfo):ActorRef = {
+            owners:List[SteamUserInfo]):ActorRef = {
     // prepare dirs
     val cwd = new File(context.system.settings.config.getString("q3mm.qlServerDir"))
     val fspath = new File(cwd.getPath.concat(s"/${endpoints.gamePort.toString}"))
@@ -53,16 +54,17 @@ object QLServer {
       "+set", "g_inactivity", "60",
       "+set", "g_allowVoteMidGame", "0",
       "+set", "g_allowSpecVote", "0",
+      "+set", "sv_master", "0",
       "+set", "fs_homepath", s"${cwd.toPath.toString}/${endpoints.gamePort}",
       "+set", "sv_mapPoolFile", "duel.txt",
       "+set", "serverstartup", "startRandomMap")
     log.info(s"server cmdline is ${cmdLine}")
     val proc = Process(cmdLine, cwd).run()
-    context.actorOf(Props(new QLServer(proc, endpoints, leftUser, rightUser)))
+    context.actorOf(Props(new QLServer(proc, endpoints, owners)))
   }
 }
 
-class QLServer(process:Process, val endpoints:QLServer.Endpoints, leftUser:SteamUserInfo, rightUser:SteamUserInfo) extends Actor {
+class QLServer(process:Process, val endpoints:QLServer.Endpoints, owners:List[SteamUserInfo]) extends Actor {
   val log = Logging(context.system, this)
   val processWatchdog = new Thread(new Runnable {
     override def run() = {
@@ -75,7 +77,11 @@ class QLServer(process:Process, val endpoints:QLServer.Endpoints, leftUser:Steam
   processWatchdog.start()
 
   override def receive: Receive = {
-    case x => log.info(s"received ${x}, but should not...")
+    case ("findUser", steamId) =>
+      if (owners.exists(_.steamId == steamId))
+        sender() ! ("foundUser", steamId)
+      else
+        sender() ! ("userNotFound", steamId)
   }
 
   override def postStop(): Unit = {

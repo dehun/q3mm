@@ -37,7 +37,7 @@ class InstanceActor extends Actor {
   }
 
   override def receive: Receive = {
-    case ("requestServer", leftUser:SteamUserInfo, rightUser:SteamUserInfo) =>
+    case ("requestServer", owners:List[SteamUserInfo]) =>
       if (servers.size >= maxServers) {
         log.warning("failing server creation request: overpopulated")
         instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
@@ -47,7 +47,7 @@ class InstanceActor extends Actor {
         log.info(s"request for server, lets spawn one more with idx ${serverIndex}!")
         val endpoints = Endpoints.random(context.system.settings.config.getString("q3mm.instanceInterface"), serverIndex)
         // spawn server
-        val server = QLServer.spawn(context, endpoints, leftUser, rightUser)
+        val server = QLServer.spawn(context, endpoints, owners)
         // spawn watchdog
         val watchdog = context.actorOf(Props(new QLServerWatchdog(endpoints, server, serverIndex, self)))
         //
@@ -61,6 +61,15 @@ class InstanceActor extends Actor {
       log.info(s"server ${idx} exited with reason ${reason}")
       servers -= idx
       instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
+
+    case request@("findUser", steamId:String) =>
+      import context.dispatcher
+      Future.sequence(servers.values.map(_._1).map(s => ask(s, request))).onComplete({
+        case Success(results) =>
+          sender() ! results.find(_ == ("foundUser", steamId)).getOrElse(("userNotFound", steamId))
+        case Failure(ex) =>
+          sender() ! ("userNotFound", steamId)
+      })
   }
 
   @scala.throws[Exception](classOf[Exception])
