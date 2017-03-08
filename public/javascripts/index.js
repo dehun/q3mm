@@ -102,22 +102,82 @@ var MatchMakeStartBox = React.createClass({
         case "enqueued":
             return (<MatchMakeState state="awaiting challenge"/>)
         case "newChallenge":
-            return (<ConnectSoServer server={this.state.server}/>)
+            return (<ConnectToServer server={this.state.server}/>)
         case "fail":
             return (<MatchMakeFail reason={this.state.reason}/>)
         } 
     }
 })
 
+var OnDemandStartButton = React.createClass({
+    render: function() {
+        return (<div id="on_demand_start_button" onClick={this.onClick}>on demand start</div>)
+    },
+    onClick: function() {
+        this.props.onRequested()
+        $.ajax({
+            url: baseUrl + "/requestServer",
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+                this.props.onSuccess(data)
+            }.bind(this),
+            error: function(xhr, status, err) {
+                console.error("", status, err.toString());
+                this.props.onError(err.toString())
+            }.bind(this)
+        });
+    }
+})
+
+var OnDemandStartBox = React.createClass({
+    getInitialState: function() {
+        return {"phase": "idle"}
+    },
+    render: function() {
+        switch (this.state.phase) {
+        case "idle":
+            return (<OnDemandStartButton
+                    onRequested={this.onServerRequested}
+                    onSuccess={this.onServerRequestSuccess}
+                    onError={this.onServerRequestFailure}/>)
+        case "requested":
+            return (<MatchMakeState state="awaiting server state"/>)
+        case "created":
+            return (<ConnectToServer server={this.state.server}/>)
+        case "fail":
+            return (<MatchMakeFail reason={this.state.reason}/>)
+        }
+    },
+    onServerRequested: function() {
+        this.setState({"phase": "requested"})
+    },
+    onServerRequestSuccess: function(msg) {
+        this.setState({"phase": "created", "server": msg.server})
+    },
+    onServerRequestFailure: function(reason) {
+        this.setState({"phase": "fail", "reason": reason})
+    }
+})
 
 var MatchMakeBox = React.createClass({
+    getInitialState: function() {
+        return {"path": "idle"}
+    },
     render: function() {
-        return (
-                <div id="match_make_box">
-                <MatchMakeStartBox/>
-                </div>
-        )
-    }
+        if (this.state.path == "idle") {
+            return (<div>
+                      <MatchMakeStartBox onStart={this.switchToMatchMake}/>
+                      <OnDemandStartBox onStart={this.switchToOnDemand}/>
+                   </div>)
+        } else if (this.sate.path == "matchmake") {
+            return (<div><MatchMakeStartBox onStart={this.switchToMatchMake}/></div>);
+        } else if (path == "ondemand") {
+            return (<div><OnDemandStartBox onStart={this.switchToOnDemand}/></div>)
+        }
+    },
+    switchToMatchMake: function() { this.setState({"path": "matchmake"})},
+    switchToOnDemand: function() { this.setState({"path": "ondemand"})}
 })
 
 var LoggedInBox = React.createClass({
