@@ -18,7 +18,7 @@ class InstanceMasterActor extends Actor {
   private def areUsersRegistered(users:List[String]): Future[Boolean] = {
     import context.dispatcher
     Future.sequence(workers.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))).map({
-      case results:List[(String, String)]=> results.filter(_._1 == "foundUser").exists(r => users.exists(_ == r._2))
+      case results:List[(String, String)]=> results.filter(_._1 == "foundUser").exists(r => users.contains(r._2))
     })
   }
 
@@ -34,34 +34,26 @@ class InstanceMasterActor extends Actor {
       workers -= deadOne
 
     case request@("requestServer", owners:List[SteamUserInfo]) =>
-      import context.dispatcher
+      implicit val executionContext = context.dispatcher
       areUsersRegistered(owners.map(_.steamId)).onComplete({
         case Success(true) => sender() ! ("failed", "already in game")
-        case Failure(ex) => sender() ! ("failed", "failued to query user existance")
-        case Success(false) => {
+        case Failure(ex) =>
+          log.warning(s"during user registration check happened and $ex")
+          sender() ! ("failed", "failued to query user existance")
+        case Success(false) =>
           if (workers.nonEmpty) {
             val randomSlave = workers.filter(_._2.potential > 0).toVector(Random.nextInt(workers.size))._1
             log.info(s"forwarding creation request to $randomSlave")
             randomSlave.forward(request)
-            workers = workers.updated(randomSlave, WorkerMetaInfo(workers.get(randomSlave).get.potential - 1))
+            workers = workers.updated(randomSlave, WorkerMetaInfo(workers(randomSlave).potential - 1))
           } else {
             log.error(s"no slave to satisfy creation request")
             sender() ! ("failed", "not enough slaves")
           }
-        }
-
-        })
-    case ("updateInfo", potential:Int) =>
-      log.info(s"updating worker ${sender()} potential to ${potential}")
-      workers = workers.updated(sender(), WorkerMetaInfo(potential))
-
-    case request@("findUser", steamId:String) =>
-      import context.dispatcher
-      Future.sequence(workers.keys.map(s => ask(s, request)(10 seconds))).onComplete({
-        case Success(results) =>
-          sender() ! results.find(_ == ("foundUser", steamId)).getOrElse(("userNotFound", steamId))
-        case Failure(ex) =>
-          sender() ! ("userNotFound", steamId)
       })
+
+    case ("updateInfo", potential:Int) =>
+      log.info(s"updating worker ${sender()} potential to $potential")
+      workers = workers.updated(sender(), WorkerMetaInfo(potential))
   }
 }
