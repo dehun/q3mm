@@ -6,9 +6,9 @@ import akka.util.Timeout
 import akka.pattern.ask
 import controllers.SteamUserInfo
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class InstanceActor extends Actor {
   private val log = Logging(context.system, this)
@@ -17,7 +17,7 @@ class InstanceActor extends Actor {
   private val maxServers = context.system.settings.config.getInt("q3mm.maxServers")
   private var servers = Map.empty[Int, (ActorRef, ActorRef)]
 
-  private val instanceMasterProxy = context.actorSelection(masterUri)
+  private val instanceMasterProxy = Await.result(context.actorSelection(masterUri).resolveOne(), timeout.duration)
 
   @scala.throws[Exception](classOf[Exception])
   override def preStart(): Unit = connectToMaster()
@@ -40,7 +40,7 @@ class InstanceActor extends Actor {
     case ("requestServer", owners:List[SteamUserInfo]) =>
       if (servers.size >= maxServers) {
         log.warning("failing server creation request: overpopulated")
-        instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
+        instanceMasterProxy ! "freeSlot"
         sender() ! ("failed", "overpopulated")
       } else {
         val serverIndex = if (servers.isEmpty) 0 else List(servers.keys.min - 1, servers.keys.max + 1).filter(_ > 0).min
@@ -53,23 +53,26 @@ class InstanceActor extends Actor {
         //
         assert(servers.get(serverIndex).isEmpty)
         servers = servers.updated(serverIndex, (server, watchdog))
-        instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
         sender() ! ("created", endpoints.url)
       }
 
     case ("serverExit", reason, idx:Int) =>
       log.info(s"server ${idx} exited with reason ${reason}")
       servers -= idx
-      instanceMasterProxy ! ("updateInfo", maxServers - servers.size)
+      instanceMasterProxy ! "freeSlot"
 
     case request@("findUser", steamId:String) =>
       import context.dispatcher
-      Future.sequence(servers.values.map(_._1).map(s => ask(s, request))).onComplete({
+      log.info(s"searching for user ${steamId} for sender ${sender()}")
+      val res = Try(Await.result(Future.sequence(servers.values.map(_._1).map(s => ask(s, request))), 10 seconds))
+      res match {
         case Success(results) =>
+          log.info("finished search")
           sender() ! results.find(_ == ("foundUser", steamId)).getOrElse(("userNotFound", steamId))
         case Failure(ex) =>
+          log.info("failed during user search, assuming there are no such user")
           sender() ! ("userNotFound", steamId)
-      })
+      }
   }
 
   @scala.throws[Exception](classOf[Exception])

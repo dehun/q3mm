@@ -37,7 +37,7 @@ object QLServer {
     // spawn
     val log = Logging(context.system, context.self)
     log.info(s"spawning new server! $endpoints")
-    val cmdLine = Seq("./run_server_x86.sh",
+    val cmdLine = Seq("./qzeroded.x64",
       "+set", "net_strict", "1",
       "+set", "net_ip", s"${endpoints.interface}",
       "+set", "net_port", s"${endpoints.gamePort}",
@@ -59,7 +59,7 @@ object QLServer {
       "+set", "sv_mapPoolFile", "duel.txt",
       "+set", "serverstartup", "startRandomMap")
     log.info(s"server cmdline is ${cmdLine}")
-    val proc = Process(cmdLine, cwd).run()
+    val proc = Process(cmdLine, cwd, "LD_LIBRARY_PATH" -> "./linux64").run()
     context.actorOf(Props(new QLServer(proc, endpoints, owners)))
   }
 }
@@ -78,6 +78,7 @@ class QLServer(process:Process, val endpoints:QLServer.Endpoints, owners:List[St
 
   override def receive: Receive = {
     case ("findUser", steamId) =>
+      log.info(s"qlserver searching for user ${steamId}")
       if (owners.exists(_.steamId == steamId))
         sender() ! ("foundUser", steamId)
       else
@@ -87,5 +88,7 @@ class QLServer(process:Process, val endpoints:QLServer.Endpoints, owners:List[St
   override def postStop(): Unit = {
     log.info(s"actor death, killing process $process")
     process.destroy()
+    val processKillerExitCode = (Seq("pgrep", "-f", s"net_port ${endpoints.gamePort}") #| "xargs kill -9").run().exitValue()
+    log.info(s"process killer exited with ${processKillerExitCode}")
   }
 }

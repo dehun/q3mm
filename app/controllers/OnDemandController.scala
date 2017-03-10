@@ -36,11 +36,17 @@ class OnDemandController @Inject () (implicit system: ActorSystem, materializer:
         case Some(userInfoJs) =>
           SteamUserInfo.fromJson(userInfoJs) match {
             case Some(userInfo) =>
-              ask(instanceMasterProxy, ("requestServer", List(userInfo.steamId)))(10 seconds).map({
-                  case ("challenge", server:String) =>
+              Logger.info(s"on demand server requested by ${userInfo.steamId}")
+              ask(instanceMasterProxy, ("requestServer", List(userInfo)))(60 seconds).map({
+                  case ("created", server:String) =>
+                    Logger.info(s"server created at ${server}")
                     Created(Json.obj("server" -> server).toString)
                   case ("failed", reason:String) =>
+                    Logger.info(s"server creation failed with reason ${reason}")
                     InternalServerError(reason)
+                  case x =>
+                    Logger.error(s"unknown message received ${x.toString}")
+                    InternalServerError(x.toString)
                 }).recover({case ex => InternalServerError(ex.toString)})
             case None =>
               Future.successful(Forbidden)

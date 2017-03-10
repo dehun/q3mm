@@ -62,6 +62,7 @@ var MatchMakeStartBox = React.createClass({
     },
     onWsConnecting: function() {
         this.setState({"phase": "connecting"})
+        this.props.onStart()
     },
     onWsOpen: function() {
         this.setState({"phase": "connected"})
@@ -151,6 +152,7 @@ var OnDemandStartBox = React.createClass({
     },
     onServerRequested: function() {
         this.setState({"phase": "requested"})
+        this.props.onStart()
     },
     onServerRequestSuccess: function(msg) {
         this.setState({"phase": "created", "server": msg.server})
@@ -165,16 +167,10 @@ var MatchMakeBox = React.createClass({
         return {"path": "idle"}
     },
     render: function() {
-        if (this.state.path == "idle") {
-            return (<div>
-                      <MatchMakeStartBox onStart={this.switchToMatchMake}/>
-                      <OnDemandStartBox onStart={this.switchToOnDemand}/>
-                   </div>)
-        } else if (this.sate.path == "matchmake") {
-            return (<div><MatchMakeStartBox onStart={this.switchToMatchMake}/></div>);
-        } else if (path == "ondemand") {
-            return (<div><OnDemandStartBox onStart={this.switchToOnDemand}/></div>)
-        }
+        return (<div>
+                  <MatchMakeStartBox onStart={this.switchToMatchMake}/>
+                  <OnDemandStartBox onStart={this.switchToOnDemand}/>
+                </div>)
     },
     switchToMatchMake: function() { this.setState({"path": "matchmake"})},
     switchToOnDemand: function() { this.setState({"path": "ondemand"})}

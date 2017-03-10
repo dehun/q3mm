@@ -5,8 +5,8 @@ import akka.pattern.ask
 import controllers.SteamUserInfo
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
-import scala.util.{Failure, Random, Success}
+import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Random, Success, Try}
 
 class InstanceMasterActor extends Actor {
 
@@ -17,9 +17,13 @@ class InstanceMasterActor extends Actor {
 
   private def areUsersRegistered(users:List[String]): Future[Boolean] = {
     import context.dispatcher
-    Future.sequence(workers.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))).map({
-      case results:List[(String, String)]=> results.filter(_._1 == "foundUser").exists(r => users.contains(r._2))
-    })
+    log.info(s"checking are users ${users} already registered in system")
+    Future.sequence(workers.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))).map(
+      results => {
+        log.info(s"got results ${results}")
+        results.map(_.asInstanceOf[(String, String)]).filter(_._1 == "foundUser").exists(r => users.contains(r._2))
+      }
+    )
   }
 
   override def receive: Receive = {
@@ -35,25 +39,30 @@ class InstanceMasterActor extends Actor {
 
     case request@("requestServer", owners:List[SteamUserInfo]) =>
       implicit val executionContext = context.dispatcher
-      areUsersRegistered(owners.map(_.steamId)).onComplete({
-        case Success(true) => sender() ! ("failed", "already in game")
+      val isAlreadyOwning = Try(Await.result(areUsersRegistered(owners.map(_.steamId)), 10 seconds))
+      isAlreadyOwning match {
+        case Success(true) =>
+          log.warning("user already in game")
+          sender() ! ("failed", "already in game")
         case Failure(ex) =>
-          log.warning(s"during user registration check happened and $ex")
+          log.warning(s"during user registration check happened $ex")
           sender() ! ("failed", "failued to query user existance")
         case Success(false) =>
-          if (workers.nonEmpty) {
-            val randomSlave = workers.filter(_._2.potential > 0).toVector(Random.nextInt(workers.size))._1
+          log.info(s"users are not registered, lets create server for them ${owners}")
+          val randomSlave = workers.find(_._2.potential > 0).map(_._1)
+          if (randomSlave.isDefined) {
             log.info(s"forwarding creation request to $randomSlave")
-            randomSlave.forward(request)
-            workers = workers.updated(randomSlave, WorkerMetaInfo(workers(randomSlave).potential - 1))
+            workers = workers.updated(randomSlave.get, WorkerMetaInfo(workers(randomSlave.get).potential - 1))
+            randomSlave.get.forward(request)
           } else {
             log.error(s"no slave to satisfy creation request")
             sender() ! ("failed", "not enough slaves")
           }
-      })
+      }
 
-    case ("updateInfo", potential:Int) =>
-      log.info(s"updating worker ${sender()} potential to $potential")
-      workers = workers.updated(sender(), WorkerMetaInfo(potential))
+    case "freeSlot" =>
+      val newPotential = workers(sender()).potential + 1
+      log.info(s"updating worker ${sender()} potential to $newPotential")
+      workers = workers.updated(sender(), WorkerMetaInfo(newPotential))
   }
 }
