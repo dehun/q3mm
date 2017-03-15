@@ -85,6 +85,7 @@ class InstanceActor extends Actor {
 
   @scala.throws[Exception](classOf[Exception])
   override def postStop(): Unit = {
+    log.warning("instance actor is dead")
     servers = Map.empty
   }
 }

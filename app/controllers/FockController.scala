@@ -49,7 +49,7 @@ class FockMasterActor extends Actor {
 
   // schedule every second
   import context.dispatcher
-  context.system.scheduler.schedule(1 seconds, 5 seconds, self, "spawn_focker")
+  context.system.scheduler.schedule(1 seconds, 1 seconds, self, "spawn_focker")
 
   // spawn a fockers!
   override def receive: Receive = {

@@ -21,21 +21,26 @@ class ZmqSubSocketActor(endpoint:String, port:Int,
   private val zmqcontext = ZMQ.context(1)
   private val zmqsocket = zmqcontext.socket(ZMQ.SUB)
 
+  zmqsocket.setReceiveTimeOut(0)
   zmqsocket.setPlainUsername(userName.getBytes())
   zmqsocket.setPlainPassword(password.getBytes())
   zmqsocket.connect(s"tcp://${endpoint}:${port}")
   zmqsocket.subscribe("".getBytes())
-  triggerPoll()
 
-  private def triggerPoll():Unit = self ! "poll"
+  self ! "poll"
 
   override def receive: Receive = {
     case "poll" =>
       try {
         val buf = zmqsocket.recvStr(Charset.defaultCharset())
-        log.info(s"QLStatsMonitor received stats event ${buf}")
-        receiver ! (msgPrefix, buf)
-        triggerPoll()
+        if (buf != null) {
+          log.debug(s"QLStatsMonitor received stats event ${buf}")
+          receiver ! (msgPrefix, buf)
+          self ! "poll"
+        } else  {
+          import context.dispatcher
+          context.system.scheduler.scheduleOnce(1 seconds, self, "poll")
+        }
       } catch {
         case ex:ZMQException => log.error(s"got zmq exception during polling $endpoint:$port, $ex")
       }
@@ -45,6 +50,7 @@ class ZmqSubSocketActor(endpoint:String, port:Int,
 
   @scala.throws[Exception](classOf[Exception])
   override def postStop(): Unit = {
+    log.info("closing zmq socket")
     zmqsocket.close()
     zmqcontext.term()
     super.postStop()

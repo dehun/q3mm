@@ -1,7 +1,8 @@
 import QLServer.Endpoints
-import akka.actor.{Actor, AllForOneStrategy, Kill, OneForOneStrategy, PoisonPill, Props, Terminated}
+import akka.actor.{Actor, AllForOneStrategy, Kill, OneForOneStrategy, PoisonPill, Props, StoppingSupervisorStrategy, Terminated}
 import akka.actor.Actor.Receive
 import akka.event.Logging
+import akka.stream.ActorAttributes.SupervisionStrategy
 
 import scala.concurrent.duration._
 import controllers.SteamUserInfo
@@ -15,18 +16,22 @@ class QLWatchedServer(endpoints: Endpoints, serverIdx:Int, owners:List[SteamUser
 
   private val server = QLServer.spawn(context, endpoints, owners)
   private val watchdog = context.actorOf(Props(new QLServerWatchdog(endpoints, server, serverIdx)))
-
   context.watch(watchdog)
 
   override def receive: Receive = {
-    case _:Terminated => {
+    case Terminated(watchdog) => {
       log.warning("terminated received, watchedserver killing itself")
-      self ! Kill
+      context.stop(self)
     }
     case req@("findUser", steamId) => server.forward(req)
     case _ => {
       log.error("received unknown message")
       ???
     }
+  }
+
+  @scala.throws[Exception](classOf[Exception])
+  override def postStop(): Unit = {
+    log.error("qlwatchedserver stops")
   }
 }

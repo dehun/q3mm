@@ -15,13 +15,13 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int) e
 
   override val supervisorStrategy = AllForOneStrategy(
     loggingEnabled=true, maxNrOfRetries = 1, withinTimeRange = 1 minute) {
-    case _ => akka.actor.SupervisorStrategy.Escalate
+    case _ => akka.actor.SupervisorStrategy.Stop
   }
 
   import context._
   context.watch(server)
-  context.system.scheduler.scheduleOnce(30 seconds) { self ! "connect_timeout_check" }
-  context.system.scheduler.scheduleOnce(60 seconds) { self ! "match_start_check" }
+  context.system.scheduler.scheduleOnce(120 seconds) { self ! "connect_timeout_check" }
+  context.system.scheduler.scheduleOnce(360 seconds) { self ! "match_start_check" }
 
   private var playersCount = 0
   private var matchStarted = false
@@ -33,13 +33,13 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int) e
     case "connect_timeout_check" =>
       if (playersCount < 2) {
         log.warning("less than 2 players, kill the server")
-        server ! Kill
+        server ! PoisonPill
       }
 
     case "match_start_check" =>
       if (!matchStarted) {
         log.warning("match has not started, kill the server")
-        server ! Kill
+        server ! PoisonPill
       }
 
     case Terminated(server) =>
@@ -66,5 +66,10 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int) e
       case "MATCH_STARTED" =>
         matchStarted = true
     }
+  }
+
+  @scala.throws[Exception](classOf[Exception])
+  override def postStop(): Unit = {
+    log.warning("watchdog is dead now")
   }
 }
