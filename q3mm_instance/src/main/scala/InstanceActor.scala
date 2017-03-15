@@ -45,7 +45,7 @@ class InstanceActor extends Actor {
   }
 
   override def receive: Receive = {
-    case ("requestServer", owners:List[SteamUserInfo]) =>
+    case ("requestServer", owners: List[SteamUserInfo]) =>
       if (servers.size >= maxServers) {
         log.warning("failing server creation request: overpopulated")
         instanceMasterProxy ! "freeSlot"
@@ -61,7 +61,7 @@ class InstanceActor extends Actor {
         sender() ! ("created", endpoints.url)
       }
 
-    case Terminated(deadOne:ActorRef) =>
+    case Terminated(deadOne: ActorRef) =>
       log.warning(s"$deadOne terminated")
       servers.find(_._2 == deadOne).foreach(server => {
         log.info(s"server ${server._1} exited. freeing slot")
@@ -71,14 +71,18 @@ class InstanceActor extends Actor {
 
     case request@("findUser", steamId:String) =>
       import context.dispatcher
-      //log.debug(s"searching for user ${steamId} for sender ${sender()}")
-      val res = Try(Await.result(Future.sequence(servers.values.map(s => ask(s, request))), 10 seconds))
+      log.debug(s"searching for the user ${steamId}")
+      val findFuture = Future.find(servers.values.map(s => ask(s, request))) {
+        case ("foundUser", foundSteamId) => foundSteamId == steamId
+        case _ => false
+      }
+      val res = Try(Await.result(findFuture, 10 seconds))
       res match {
-        case Success(results) =>
-          //log.debug(s"finished search for $steamId")
-          sender() ! results.find(_ == ("foundUser", steamId)).getOrElse(("userNotFound", steamId))
+        case Success(Some(result)) =>
+          sender() ! result
+        case Success(None) =>
+          sender() ! ("userNotFound", steamId)
         case Failure(ex) =>
-          //log.debug(s"failed during user ${steamId} search, assuming there are no such user")
           sender() ! ("userNotFound", steamId)
       }
   }
