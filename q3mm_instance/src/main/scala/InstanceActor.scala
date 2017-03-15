@@ -1,5 +1,6 @@
 import QLServer.Endpoints
 import akka.actor.Actor.Receive
+import akka.actor.SupervisorStrategy._
 import akka.actor._
 import akka.event.Logging
 import akka.util.Timeout
@@ -12,10 +13,17 @@ import scala.util.{Failure, Success, Try}
 
 class InstanceActor extends Actor {
   private val log = Logging(context.system, this)
+
+  override val supervisorStrategy = OneForOneStrategy(
+    loggingEnabled = true,
+    maxNrOfRetries = 1, withinTimeRange = 1 minute) {
+    case _ => akka.actor.SupervisorStrategy.Stop
+  }
+
   private val masterUri = context.system.settings.config.getString("q3mm.instanceMasterUri")
   private implicit val timeout = Timeout(5 seconds)
   private val maxServers = context.system.settings.config.getInt("q3mm.maxServers")
-  private var servers = Map.empty[Int, (ActorRef, ActorRef)]
+  private var servers = Map.empty[Int, ActorRef]
 
   private val instanceMasterProxy = Await.result(context.actorSelection(masterUri).resolveOne(), timeout.duration)
 
@@ -47,38 +55,36 @@ class InstanceActor extends Actor {
         log.info(s"request for server, lets spawn one more with idx ${serverIndex}!")
         val endpoints = Endpoints.random(context.system.settings.config.getString("q3mm.instanceInterface"), serverIndex)
         // spawn server
-        val server = QLServer.spawn(context, endpoints, owners)
-        // spawn watchdog
-        val watchdog = context.actorOf(Props(new QLServerWatchdog(endpoints, server, serverIndex, self)))
-        //
-        assert(servers.get(serverIndex).isEmpty)
-        servers = servers.updated(serverIndex, (server, watchdog))
+        val server = context.actorOf(Props(new QLWatchedServer(endpoints, serverIndex, owners)))
+        context.watch(server)
+        servers = servers.updated(serverIndex, server)
         sender() ! ("created", endpoints.url)
       }
 
-    case ("serverExit", reason, idx:Int) =>
-      log.info(s"server ${idx} exited with reason ${reason}")
-      servers -= idx
-      instanceMasterProxy ! "freeSlot"
+    case Terminated(deadOne:ActorRef) =>
+      log.warning(s"$deadOne terminated")
+      servers.find(_._2 == deadOne).foreach(server => {
+        log.info(s"server ${server._1} exited. freeing slot")
+        servers -= server._1
+        instanceMasterProxy ! "freeSlot"
+      })
 
     case request@("findUser", steamId:String) =>
       import context.dispatcher
-      log.info(s"searching for user ${steamId} for sender ${sender()}")
-      val res = Try(Await.result(Future.sequence(servers.values.map(_._1).map(s => ask(s, request))), 10 seconds))
+      //log.debug(s"searching for user ${steamId} for sender ${sender()}")
+      val res = Try(Await.result(Future.sequence(servers.values.map(s => ask(s, request))), 10 seconds))
       res match {
         case Success(results) =>
-          log.info("finished search")
+          //log.debug(s"finished search for $steamId")
           sender() ! results.find(_ == ("foundUser", steamId)).getOrElse(("userNotFound", steamId))
         case Failure(ex) =>
-          log.info("failed during user search, assuming there are no such user")
+          //log.debug(s"failed during user ${steamId} search, assuming there are no such user")
           sender() ! ("userNotFound", steamId)
       }
   }
 
   @scala.throws[Exception](classOf[Exception])
   override def postStop(): Unit = {
-    log.warning("post stop, killing all servers")
-    servers.values.foreach(_._2 ! PoisonPill)
     servers = Map.empty
   }
 }

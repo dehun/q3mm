@@ -15,4 +15,7 @@ GET     /openIdCallback             controllers.LoginController.openIdCallback
 GET     /queue                      controllers.QueueController.queueSocket
 
 # ondemand
-GET     /requestServer                      controllers.OnDemandController.requestServer
+GET     /requestServer              controllers.OnDemandController.requestServer
+
+# testing
+GET     /fock                       controllers.FockController.fock

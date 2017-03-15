@@ -17,10 +17,10 @@ class InstanceMasterActor extends Actor {
 
   private def areUsersRegistered(users:List[String]): Future[Boolean] = {
     import context.dispatcher
-    log.info(s"checking are users ${users} already registered in system")
+    log.debug(s"checking are users ${users} already registered in system")
     Future.sequence(workers.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))).map(
       results => {
-        log.info(s"got results ${results}")
+        log.debug(s"search got results ${results}")
         results.map(_.asInstanceOf[(String, String)]).filter(_._1 == "foundUser").exists(r => users.contains(r._2))
       }
     )

@@ -68,17 +68,18 @@ class QLServer(process:Process, val endpoints:QLServer.Endpoints, owners:List[St
   val log = Logging(context.system, this)
   val processWatchdog = new Thread(new Runnable {
     override def run() = {
+      val preservedSelf = self
       log.info(s"watching process ${process}")
       val exitValue = process.exitValue()
       log.info(s"ql server exited with code ${exitValue}, terminating responsible actor")
-      self ! PoisonPill
+      preservedSelf ! PoisonPill
     }
   })
   processWatchdog.start()
 
   override def receive: Receive = {
     case ("findUser", steamId) =>
-      log.info(s"qlserver searching for user ${steamId}")
+      //log.debug(s"qlserver searching for user ${steamId}")
       if (owners.exists(_.steamId == steamId))
         sender() ! ("foundUser", steamId)
       else
@@ -89,6 +90,7 @@ class QLServer(process:Process, val endpoints:QLServer.Endpoints, owners:List[St
     log.info(s"actor death, killing process $process")
     process.destroy()
     val processKillerExitCode = (Seq("pgrep", "-f", s"net_port ${endpoints.gamePort}") #| "xargs kill -9").run().exitValue()
-    log.info(s"process killer exited with ${processKillerExitCode}")
+    processWatchdog.join()
+    log.info(s"watchdog dead, and process killer exited with ${processKillerExitCode}")
   }
 }
