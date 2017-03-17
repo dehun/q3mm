@@ -25,30 +25,38 @@ class InstanceActor extends Actor {
   private val maxServers = context.system.settings.config.getInt("q3mm.maxServers")
   private var servers = Map.empty[Int, ActorRef]
 
-  private val instanceMasterProxy = Await.result(context.actorSelection(masterUri).resolveOne(), timeout.duration)
-
-  @scala.throws[Exception](classOf[Exception])
-  override def preStart(): Unit = connectToMaster()
+  private var instanceMasterProxy = Option.empty[ActorRef]
+  self ! "connectToMaster"
 
   private def connectToMaster():Unit = {
     implicit val timeout = Timeout(10 seconds)
     implicit val executionContext = context.system.dispatcher
+    if (instanceMasterProxy.isDefined) return
 
-    ask(instanceMasterProxy, ("i_wanna_be_your_dog", self, maxServers)).onComplete({
-      case Success("good_doggie") =>
-        log.info("waf waf")
-      case Failure(ex) =>
-        log.error(ex, "fatality, can not connect to master, retrying")
-        connectToMaster()
-      case _ => ???
-    })
+    for {nm <- Try(Await.result(context.actorSelection(masterUri).resolveOne(), timeout.duration))
+         ans <- ask(nm, ("i_wanna_be_your_dog", self, maxServers))} {
+      ans match {
+        case "good_doggie" =>
+          instanceMasterProxy = Some(nm)
+          log.info("waf waf")
+          instanceMasterProxy.foreach(context.watch)
+      }
+    }
+    if (instanceMasterProxy.isEmpty) {
+      log.error("fatality, can not connect to master, retrying")
+      context.system.scheduler.scheduleOnce(5 seconds, self, "connectToMaster")
+    }
   }
 
+
   override def receive: Receive = {
+    case "connectToMaster" =>
+      connectToMaster()
+
     case ("requestServer", owners: List[SteamUserInfo]) =>
       if (servers.size >= maxServers) {
         log.warning("failing server creation request: overpopulated")
-        instanceMasterProxy ! "freeSlot"
+        instanceMasterProxy.foreach(_ ! "freeSlot")
         sender() ! ("failed", "overpopulated")
       } else {
         val serverIndex = if (servers.isEmpty) 0 else List(servers.keys.min - 1, servers.keys.max + 1).filter(_ > 0).min
@@ -61,12 +69,16 @@ class InstanceActor extends Actor {
         sender() ! ("created", endpoints.url)
       }
 
+    case Terminated(deadOne) if instanceMasterProxy.contains(deadOne) =>
+      instanceMasterProxy = None
+      connectToMaster()
+
     case Terminated(deadOne: ActorRef) =>
       log.warning(s"$deadOne terminated")
       servers.find(_._2 == deadOne).foreach(server => {
         log.info(s"server ${server._1} exited. freeing slot")
         servers -= server._1
-        instanceMasterProxy ! "freeSlot"
+        instanceMasterProxy.foreach(_ ! "freeSlot")
       })
 
     case request@("findUser", steamId:String) =>

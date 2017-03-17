@@ -9,16 +9,15 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Random, Success, Try}
 
 class InstanceMasterActor extends Actor {
-
   case class WorkerMetaInfo(potential:Int)
 
   private val log = Logging(context.system, this)
-  private var workers = Map.empty[ActorRef, WorkerMetaInfo]
+  private var slaves = Map.empty[ActorRef, WorkerMetaInfo]
 
   private def areUsersRegistered(users:List[String]): Future[Boolean] = {
     import context.dispatcher
     log.debug(s"checking are users ${users} already registered in system")
-    Future.sequence(workers.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))).map(
+    Future.sequence(slaves.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))).map(
       results => {
         log.debug(s"search got results ${results}")
         results.map(_.asInstanceOf[(String, String)]).filter(_._1 == "foundUser").exists(r => users.contains(r._2))
@@ -29,13 +28,13 @@ class InstanceMasterActor extends Actor {
   override def receive: Receive = {
     case ("i_wanna_be_your_dog", dog:ActorRef, potential:Int) =>
       log.info(s"got new slave ${sender()}")
-      workers = workers.updated(dog, WorkerMetaInfo(potential))
+      slaves = slaves.updated(dog, WorkerMetaInfo(potential))
       context.watch(dog)
       sender() ! "good_doggie"
 
-    case Terminated(deadOne) =>
+    case Terminated(deadOne) if slaves.contains(deadOne) =>
       log.warning(s"slave $deadOne is dead")
-      workers -= deadOne
+      slaves -= deadOne
 
     case request@("requestServer", owners:List[SteamUserInfo]) =>
       implicit val executionContext = context.dispatcher
@@ -49,10 +48,10 @@ class InstanceMasterActor extends Actor {
           sender() ! ("failed", "failued to query user existance")
         case Success(false) =>
           log.info(s"users are not registered, lets create server for them ${owners}")
-          val randomSlave = workers.find(_._2.potential > 0).map(_._1)
+          val randomSlave = slaves.find(_._2.potential > 0).map(_._1)
           if (randomSlave.isDefined) {
             log.info(s"forwarding creation request to $randomSlave")
-            workers = workers.updated(randomSlave.get, WorkerMetaInfo(workers(randomSlave.get).potential - 1))
+            slaves = slaves.updated(randomSlave.get, WorkerMetaInfo(slaves(randomSlave.get).potential - 1))
             randomSlave.get.forward(request)
           } else {
             log.error(s"no slave to satisfy creation request")
@@ -61,8 +60,8 @@ class InstanceMasterActor extends Actor {
       }
 
     case "freeSlot" =>
-      val newPotential = workers(sender()).potential + 1
+      val newPotential = slaves(sender()).potential + 1
       log.info(s"updating worker ${sender()} potential to $newPotential")
-      workers = workers.updated(sender(), WorkerMetaInfo(newPotential))
+      slaves = slaves.updated(sender(), WorkerMetaInfo(newPotential))
   }
 }
