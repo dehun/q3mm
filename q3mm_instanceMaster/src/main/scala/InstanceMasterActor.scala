@@ -2,14 +2,14 @@ import akka.actor.Actor.Receive
 import akka.event.Logging
 import akka.actor._
 import akka.pattern.ask
-import controllers.SteamUserInfo
+import controllers.{InstanceMasterStats, SteamUserInfo}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Random, Success, Try}
 
 class InstanceMasterActor extends Actor {
-  case class WorkerMetaInfo(potential:Int)
+  case class WorkerMetaInfo(potential:Int, maxPotential:Int)
 
   private val log = Logging(context.system, this)
   private var slaves = Map.empty[ActorRef, WorkerMetaInfo]
@@ -28,7 +28,7 @@ class InstanceMasterActor extends Actor {
   override def receive: Receive = {
     case ("i_wanna_be_your_dog", dog:ActorRef, potential:Int) =>
       log.info(s"got new slave ${sender()}")
-      slaves = slaves.updated(dog, WorkerMetaInfo(potential))
+      slaves = slaves.updated(dog, WorkerMetaInfo(potential, potential))
       context.watch(dog)
       sender() ! "good_doggie"
 
@@ -51,7 +51,8 @@ class InstanceMasterActor extends Actor {
           val randomSlave = slaves.find(_._2.potential > 0).map(_._1)
           if (randomSlave.isDefined) {
             log.info(s"forwarding creation request to $randomSlave")
-            slaves = slaves.updated(randomSlave.get, WorkerMetaInfo(slaves(randomSlave.get).potential - 1))
+            val slaveMeta = slaves(randomSlave.get)
+            slaves = slaves.updated(randomSlave.get, slaveMeta.copy(potential = slaveMeta.potential - 1))
             randomSlave.get.forward(request)
           } else {
             log.error(s"no slave to satisfy creation request")
@@ -62,6 +63,12 @@ class InstanceMasterActor extends Actor {
     case "freeSlot" =>
       val newPotential = slaves(sender()).potential + 1
       log.info(s"updating worker ${sender()} potential to $newPotential")
-      slaves = slaves.updated(sender(), WorkerMetaInfo(newPotential))
+      slaves = slaves.updated(sender(), slaves(sender).copy(potential = newPotential))
+
+    case "stats" =>
+      log.info("gathering backend stats")
+      val maxServers = slaves.values.map(_.maxPotential).sum
+      val leftServers = slaves.values.map(_.potential).sum
+      sender() ! InstanceMasterStats(maxServers - leftServers, maxServers)
   }
 }

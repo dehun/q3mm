@@ -5,7 +5,7 @@ import akka.util.Timeout
 
 import scala.util._
 import scala.concurrent.duration._
-import controllers.SteamUserInfo
+import controllers.{QueueStats, SteamUserInfo}
 import play.api.libs.json.{JsObject, Json}
 
 import scala.concurrent.Future
@@ -33,6 +33,10 @@ class QueueActor extends Actor {
     case ("dequeue", steamId:String) =>
       log.info(s"dequeuing $steamId")
       queue -= steamId
+
+    case "stats" =>
+      log.info("gathering backend stats")
+      sender() ! QueueStats(queue.values.map(_.userInfo).toList)
 
     case Tick() =>
       // select optimal matches

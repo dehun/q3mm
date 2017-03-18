@@ -17,5 +17,10 @@ GET     /queue                      controllers.QueueController.queueSocket
 # ondemand
 GET     /requestServer              controllers.OnDemandController.requestServer
 
+# backend stats
+GET     /backendStats               controllers.BackendStatsController.stats
+
 # testing
 GET     /fock                       controllers.FockController.fock
+
+
