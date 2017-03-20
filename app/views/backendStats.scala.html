@@ -1,6 +1,29 @@
 @(queueStats: QueueStats, instanceMasterStats: InstanceMasterStats)
 
-@main("match make!") {
-
+@main("backend stats") {
+<h2>Servers statistics</h2>
+<table>
+    <tr>
+        <td>Servers free</td>
+        <td>@instanceMasterStats.freeServers</td>
+    </tr>
+    <tr>
+        <td>Servers up and running</td>
+        <td>@instanceMasterStats.activeServers</td>
+    </tr>
+</table>
+<h2>Queue state</h2>
+<table>
+    <tr>
+        <th>Nickname</th>
+        <th>Glicko</th>
+    </tr>
+    @for(player <- queueStats.users) {
+       <tr>
+           <td>@player._1.personaName</td>
+           <td>@player._2</td>
+       </tr>
+    }
+</table>
 }
 

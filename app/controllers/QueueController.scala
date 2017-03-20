@@ -21,7 +21,8 @@ import play.api.libs.streams.ActorFlow
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-class QueueController @Inject() (ws:WSClient)(implicit system: ActorSystem, materializer: Materializer) extends Controller {
+class QueueController @Inject() (ws:WSClient, configuration: play.api.Configuration)
+                                (implicit system: ActorSystem, materializer: Materializer) extends Controller {
   def getGlicko(steamId:String):Future[Double] = {
     val url = s"http://qlstats.net/player/${steamId}.json"
     val request = ws.url(url)
@@ -51,6 +52,16 @@ class QueueController @Inject() (ws:WSClient)(implicit system: ActorSystem, mate
               Some(Future.successful(Left(Forbidden.withNewSession)))
             }).get
       }
+    }
+  }
+
+  def matchMake = Action {
+    request => {
+      implicit val reads = Json.reads[SteamUserInfo]
+      Ok(views.html.matchMake(
+        request.session.get("steamUserInfo").flatMap(v =>
+          SteamUserInfo.fromJson(v)),
+        configuration.underlying.getString("q3mm.wsUrl")))
     }
   }
 }

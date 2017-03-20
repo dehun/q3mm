@@ -11,14 +11,7 @@ import play.api.mvc._
  * application's home page.
  */
 @Singleton
-class HomeController  @Inject() (configuration: play.api.Configuration) extends Controller {
-
-  /**
-   * Create an Action to render an HTML page with a welcome message.
-   * The configuration in the `routes` file means that this method
-   * will be called when the application receives a `GET` request with
-   * a path of `/`.
-   */
+class HomeController @Inject() (configuration: play.api.Configuration) extends Controller {
   def index = Action {
     request => {
       implicit val reads = Json.reads[SteamUserInfo]
@@ -27,6 +20,10 @@ class HomeController  @Inject() (configuration: play.api.Configuration) extends 
           SteamUserInfo.fromJson(v)),
         configuration.underlying.getString("q3mm.wsUrl")))
     }
+  }
+
+  def about = Action {
+    Ok(views.html.about())
   }
 
 }

@@ -6,11 +6,11 @@ var LoginBox = React.createClass({
             <div>
                     <p>Quake Live Duel Matchmaking and ad-hoc/on-demand duel server hosting.
                     Servers got killed on inactivity timeout(no enough players, match do not start for to long).
-                    In order to use this service you have to first login via Steam Open Id. 
+                    In order to use this service you have to first login via Steam Open Id.
                     </p>
                     <LoginButton/>
             </div>)
-    }    
+    }
 })
 
 var MatchMakeState = React.createClass({
@@ -62,7 +62,6 @@ var MatchMakeStartBox = React.createClass({
     },
     onWsConnecting: function() {
         this.setState({"phase": "connecting"})
-        this.props.onStart()
     },
     onWsOpen: function() {
         this.setState({"phase": "connected"})
@@ -152,7 +151,6 @@ var OnDemandStartBox = React.createClass({
     },
     onServerRequested: function() {
         this.setState({"phase": "requested"})
-        this.props.onStart()
     },
     onServerRequestSuccess: function(msg) {
         this.setState({"phase": "created", "server": msg.server})
@@ -163,17 +161,17 @@ var OnDemandStartBox = React.createClass({
 })
 
 var MatchMakeBox = React.createClass({
-    getInitialState: function() {
-        return {"path": "idle"}
-    },
     render: function() {
+        if (mode == "matchmake") {
         return (<div>
-                  <MatchMakeStartBox onStart={this.switchToMatchMake}/>
-                  <OnDemandStartBox onStart={this.switchToOnDemand}/>
+                  <MatchMakeStartBox/>
                 </div>)
-    },
-    switchToMatchMake: function() { this.setState({"path": "matchmake"})},
-    switchToOnDemand: function() { this.setState({"path": "ondemand"})}
+        } else {
+            return (<div>
+                      <OnDemandStartBox/>
+                    </div>)
+        }
+    }
 })
 
 var LoggedInBox = React.createClass({

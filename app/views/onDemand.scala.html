@@ -1,0 +1,12 @@
+@(userinfo: Option[SteamUserInfo], wsUrl:String)
+
+@main("on demand") {
+@if(userinfo.isDefined) {
+<script>
+      var wshost = "@wsUrl";
+      var userName="@userinfo.get.personaName"
+      var mode="onDemand";
+</script>
+}
+<script src="@routes.Assets.versioned("javascripts/matchMake.js")" type="text/babel"></script>
+}

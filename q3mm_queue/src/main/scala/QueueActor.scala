@@ -36,7 +36,7 @@ class QueueActor extends Actor {
 
     case "stats" =>
       log.info("gathering backend stats")
-      sender() ! QueueStats(queue.values.map(_.userInfo).toList)
+      sender() ! QueueStats(queue.values.map(u => (u.userInfo, u.glicko)).toList)
 
     case Tick() =>
       // select optimal matches
@@ -72,7 +72,7 @@ class QueueActor extends Actor {
         }
       )
       // clean up
-    queue = queue.filter(p => matches.exists(
+    queue = queue.filterNot(p => matches.exists(
       m => m._1.userInfo.steamId == p._1 || m._2.userInfo.steamId == p._1))
   }
 }
