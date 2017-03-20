@@ -58,15 +58,14 @@ a.menu_link {
     letter-spacing: .1rem;
     font-weight: 600;
     text-decoration: none;
-    text-shadow: 2px 3px 2px black;
+    /* text-shadow: 2px 3px 2px black; */
     font-family: "newtown";
 }
 
 #out_content {
-    width: 800px;
+    width: 1200px;
     padding-top: 100px;
 }
-
 
 body {
   background-size: 100%;
@@ -76,17 +75,90 @@ body {
 
 h1 {
     font-family: "newtown";
-    /*font-weight: bold;*/
-    text-shadow: 2px 3px 2px black;
+    /* text-shadow: 2px 3px 2px black; */
 }
 
 h2 {
     font-family: "newtown";
     padding-top: 0px;
     margin-top: 0px;
+    margin-bottom: 5px;
 }
 
-button {
-    background-color: #AA1113;
+table {
+    border: 0px;
+    padding-left: 30px;
+}
+
+td {
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+th {
     background-color: #737373;
+    color: #000000;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+#react_top_box {
+    width: 600px;
+    height: 400px;
+    margin: auto;
+    
+}
+
+#login_box {
+
+}
+
+#logged_in_box {
+}
+
+.big_button {
+    display: block;
+    background-color: #AA1113;
+    padding: 0.5em 0;
+    font-size: 14pt;
+    line-height: 2.25em;
+    width: 500px;
+    height: 70px;
+    color: white;
+    border: 0;
+    text-align: center;
+    letter-spacing: .1rem;
+    font-weight: 600;
+    text-decoration: none;
+    /* text-shadow: 2px 3px 2px black; */
+    font-family: "newtown";
+    background-color: #AA1113;
+    cursor: pointer;
+    margin: auto;
+}
+
+button:hover {
+/*    box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);*/
+    /* box-shadow: 0px 2px 2px 2px #333; */
+/*    border: */
+}
+
+#welcome {
+    width: 100%;
+    text-align: center;
+}
+
+.state_box {
+    border: 1px solid #AA1113;
+    text-align: center;
+    width: 600px;
+    height: 100px;
+    line-height: 100px;
+}
+
+.server_link {
+    color: #FFFFFF;
+    font-size: 14pt;
+    line-height: 1.25em;
+    text-decoration: none;
 }

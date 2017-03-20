@@ -3,7 +3,7 @@ var baseUrl = "http://localhost:9000"
 var LoginBox = React.createClass({
     render: function() {
             return (
-            <div>
+            <div id="login_box">
                     <p>Quake Live Duel Matchmaking and ad-hoc/on-demand duel server hosting.
                     Servers got killed on inactivity timeout(no enough players, match do not start for to long).
                     In order to use this service you have to first login via Steam Open Id.
@@ -15,13 +15,13 @@ var LoginBox = React.createClass({
 
 var MatchMakeState = React.createClass({
     render: function() {
-        return (<div id="mm_state">{this.props.state}</div>)
+        return (<div id="mm_state" className="state_box">{this.props.state}</div>)
     }
 })
 
 var MatchMakeFail = React.createClass({
     render: function() {
-        return (<div id="mm_fail">{this.props.reason}</div>)
+        return (<div id="mm_fail" className="state_box">{this.props.reason}</div>)
     }
 })
 
@@ -31,13 +31,8 @@ var ConnectToServer = React.createClass({
             window.location.replace(this.props.server)
         }, 3000)
         return (
-                <div id="connect_to_server">
-                  <div id="server_description">
-                    Clink on the link to connect to server.
-                  </div>
-                  <div id="server_link_box">
-                    <a href="{this.props.server}">{this.props.server}</a>
-                  </div>
+                <div id="connect_to_server" className="state_box">
+                    <a href={this.props.server} className="server_link">{this.props.server}</a>
                 </div>
         )
     }
@@ -45,7 +40,7 @@ var ConnectToServer = React.createClass({
  
 var MatchMakeButton = React.createClass({
     render: function() {
-        return (<div id="match_make_button" onClick={this.onClick}>Start match</div>)
+        return (<button id="match_make_button" className="big_button" onClick={this.onClick}>Start match</button>)
     },
     onClick: function() {
         var socket = new WebSocket(wshost);
@@ -111,7 +106,7 @@ var MatchMakeStartBox = React.createClass({
 
 var OnDemandStartButton = React.createClass({
     render: function() {
-        return (<div id="on_demand_start_button" onClick={this.onClick}>on demand start</div>)
+        return (<button id="on_demand_start_button" className="big_button" onClick={this.onClick}>Create server</button>)
     },
     onClick: function() {
         this.props.onRequested()
@@ -163,9 +158,9 @@ var OnDemandStartBox = React.createClass({
 var MatchMakeBox = React.createClass({
     render: function() {
         if (mode == "matchmake") {
-        return (<div>
-                  <MatchMakeStartBox/>
-                </div>)
+            return (<div>
+                      <MatchMakeStartBox/>
+                    </div>)
         } else {
             return (<div>
                       <OnDemandStartBox/>
@@ -178,7 +173,7 @@ var LoggedInBox = React.createClass({
     render: function() {
         return (
                 <div id="logged_in_box">
-                  <span>Welcome back {this.props.userName}</span>
+                  <div id="welcome">Welcome back {this.props.userName}</div>
                   <MatchMakeBox/>
                 </div>
         )
@@ -188,7 +183,7 @@ var LoggedInBox = React.createClass({
 var LoginButton = React.createClass({
     render: function() {
             return (
-                    <div id="login_button" onClick={this.onClick}>Log In</div>
+                    <button id="login_button" className="big_button" onClick={this.onClick}>Log In</button>
             )
     },
     onClick: function() {
@@ -202,9 +197,9 @@ var ContentBox = React.createClass({
     },
     render: function() {
         if (this.state.isLoggedIn) {
-            return (<LoggedInBox userName={userName}/>)
+            return (<div id="react_top_box"><LoggedInBox userName={userName}/></div>)
         } else {
-            return (<LoginBox/>)
+            return (<div id="react_top_box"><LoginBox/></div>)
         }
     }
 })
