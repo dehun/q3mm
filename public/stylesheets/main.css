@@ -1,0 +1,92 @@
+@font-face {
+    font-family:"newtown";
+    src: url("newtown.ttf") format("truetype");
+}
+
+body {
+	font-size: 1.5em;
+	line-height: 1.6;
+	font-weight: 400;
+	font-family: "Noto Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #222;
+}
+
+#main {
+    margin: auto;
+    width: 1200px;
+    border: 0;
+    padding: 0;
+    color: white;
+}
+
+#titles {
+    text-align: center;
+}
+
+#title_box {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background-color: #AA1113;
+}
+
+#main_menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 1200px;
+}
+
+li.menu_el {
+    float: left;
+    display: block;
+    width: 200px;
+    background-color: #AA1113;
+    margin-left: 30px;
+    height: 42px;
+}
+
+a.menu_link {
+    display: block;
+    background-color: #AA1113;
+    padding: 0.5em 0;
+    font-size: 14pt;
+    line-height: 1.25em;
+    color: white;
+    border: 0;
+    text-align: center;
+    letter-spacing: .1rem;
+    font-weight: 600;
+    text-decoration: none;
+    text-shadow: 2px 3px 2px black;
+    font-family: "newtown";
+}
+
+#out_content {
+    width: 800px;
+    padding-top: 100px;
+}
+
+
+body {
+  background-size: 100%;
+  background-color: black;
+  color: #eee;
+}
+
+h1 {
+    font-family: "newtown";
+    /*font-weight: bold;*/
+    text-shadow: 2px 3px 2px black;
+}
+
+h2 {
+    font-family: "newtown";
+    padding-top: 0px;
+    margin-top: 0px;
+}
+
+button {
+    background-color: #AA1113;
+    background-color: #737373;
+}
