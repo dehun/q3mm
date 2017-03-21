@@ -17,6 +17,13 @@ body {
     border: 0;
     padding: 0;
     color: white;
+    min-height:100%;
+    /* margin-bottom: -200px; */
+}
+
+#main:after {
+  content: "";
+  display: block;
 }
 
 #titles {
@@ -166,4 +173,14 @@ button:hover {
 a {
     color: #FFFFFF;
     text-decoration: none;
+}
+
+#footer {
+    width: 100%;
+    left: 0;
+    bottom: 0;
+    text-align: center;
+    color: #222;
+    max-height: 200px;
+    margin-top: 150px;
 }

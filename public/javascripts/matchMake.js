@@ -33,8 +33,7 @@ var ConnectToServer = React.createClass({
         return (
                 <div id="connect_to_server" className="state_box">
                     <a href={this.props.server} className="server_link">{this.props.server}</a>
-                </div>
-        )
+                </div>)
     }
 })
  
