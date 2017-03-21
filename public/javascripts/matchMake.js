@@ -169,14 +169,30 @@ var MatchMakeBox = React.createClass({
     }
 })
 
+var Rules = React.createClass({
+    render: function() {
+        return (<div id="rules">
+                <h3>Rules</h3>
+                <ul>
+                <li>Servers are deleted on inactivity, disconnects</li>
+                <li>Duels only</li>
+                <li>Glickos at the moment grabbed from <a href="qlstats.net">qlstats.net</a></li>
+                </ul>
+                </div>)
+    }
+})
+
 var LoggedInBox = React.createClass({
     render: function() {
         return (
                 <div id="logged_in_box">
-                  <div id="welcome">Welcome back {this.props.userName}</div>
+                  <div id="welcome">
+                    <div>You are logged in as </div>
+                    <div><img src={this.props.userAvatar}/>{this.props.userName}</div>
+                  </div>
+                  <Rules/>
                   <MatchMakeBox/>
-                </div>
-        )
+                </div>)
     }
 })
 
@@ -197,7 +213,7 @@ var ContentBox = React.createClass({
     },
     render: function() {
         if (this.state.isLoggedIn) {
-            return (<div id="react_top_box"><LoggedInBox userName={userName}/></div>)
+            return (<div id="react_top_box"><LoggedInBox userName={userName} userAvatar={userAvatar}/></div>)
         } else {
             return (<div id="react_top_box"><LoginBox/></div>)
         }

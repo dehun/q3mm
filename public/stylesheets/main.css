@@ -162,3 +162,8 @@ button:hover {
     line-height: 1.25em;
     text-decoration: none;
 }
+
+a {
+    color: #FFFFFF;
+    text-decoration: none;
+}
