@@ -4,10 +4,7 @@ var LoginBox = React.createClass({
     render: function() {
             return (
             <div id="login_box">
-                    <p>Quake Live Duel Matchmaking and ad-hoc/on-demand duel server hosting.
-                    Servers got killed on inactivity timeout(no enough players, match do not start for to long).
-                    In order to use this service you have to first login via Steam Open Id.
-                    </p>
+                    <p>In order to use this service you have to login via steam</p>
                     <LoginButton/>
             </div>)
     }
@@ -202,7 +199,7 @@ var LoggedInBox = React.createClass({
 var LoginButton = React.createClass({
     render: function() {
             return (
-                    <button id="login_button" className="big_button" onClick={this.onClick}>Log In</button>
+                    <img src="assets/images/login_button.png" onClick={this.onClick}/>
             )
     },
     onClick: function() {

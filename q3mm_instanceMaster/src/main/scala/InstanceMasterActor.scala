@@ -53,7 +53,7 @@ class InstanceMasterActor extends Actor {
             log.info(s"forwarding creation request to $randomSlave")
             val slaveMeta = slaves(randomSlave.get)
             slaves = slaves.updated(randomSlave.get, WorkerMetaInfo(slaveMeta.potential - 1, slaveMeta.maxPotential))
-            randomSlave.get.forward(request)
+            randomSlave.get.tell(request, requestor)
           } else {
             log.error(s"no slave to satisfy creation request")
             requestor ! ("failed", "not enough slaves")
