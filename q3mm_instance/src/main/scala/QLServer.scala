@@ -41,7 +41,7 @@ object QLServer {
       "+set", "net_strict", "1",
       "+set", "net_ip", s"${endpoints.interface}",
       "+set", "net_port", s"${endpoints.gamePort}",
-      "+set", "sv_hostname", "q3mm server",
+      "+set", "sv_hostname", "hurtmeplenty.space slave",
       "+set", "zmq_rcon_enable", "1",
       "+set", "zmq_rcon_password", s"${endpoints.rconPassword}",
       "+set", "zmq_rcon_port", s"${endpoints.rconPort}",
@@ -54,7 +54,7 @@ object QLServer {
       "+set", "g_inactivity", "60",
       "+set", "g_allowVoteMidGame", "0",
       "+set", "g_allowSpecVote", "0",
-      "+set", "sv_master", "0",
+//      "+set", "sv_master", "1",
       "+set", "fs_homepath", s"${cwd.toPath.toString}/${endpoints.gamePort}",
       "+set", "sv_mapPoolFile", "duel.txt",
       "+set", "serverstartup", "startRandomMap")

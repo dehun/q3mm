@@ -59,12 +59,14 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int) e
         log.info("player disconnected, just die")
         self ! PoisonPill
       case "PLAYER_SWITCHTEAM" =>
-        if ((stats_event \ "DATA" \ "TEAM").as[String] == "FREE") {
+        if ((stats_event \ "DATA" \ "KILLER"\ "TEAM").as[String] =="FREE") {
           playersCount += 1
           log.info(s"player joined the match, now we have ${playersCount} players")
         }
       case "MATCH_STARTED" =>
         matchStarted = true
+      case evt =>
+        log.info(s"received event ${evt}")
     }
   }
 
