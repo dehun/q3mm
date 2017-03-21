@@ -84,19 +84,18 @@ class InstanceActor extends Actor {
     case request@("findUser", steamId:String) =>
       import context.dispatcher
       log.debug(s"searching for the user ${steamId}")
+      val requestor = sender()
       val findFuture = Future.find(servers.values.map(s => ask(s, request))) {
         case ("foundUser", foundSteamId) => foundSteamId == steamId
         case _ => false
-      }
-      val res = Try(Await.result(findFuture, 10 seconds))
-      res match {
+      }.onComplete({
         case Success(Some(result)) =>
-          sender() ! result
+          requestor ! result
         case Success(None) =>
-          sender() ! ("userNotFound", steamId)
+          requestor ! ("userNotFound", steamId)
         case Failure(ex) =>
-          sender() ! ("userNotFound", steamId)
-      }
+          requestor ! ("userNotFound", steamId)
+      })
   }
 
   @scala.throws[Exception](classOf[Exception])

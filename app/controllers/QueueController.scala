@@ -2,6 +2,7 @@ package controllers
 
 import java.time.Duration
 import java.util.concurrent
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 
 import akka.actor.Actor.Receive
@@ -71,13 +72,14 @@ object QueueMessages {
   class QueueMessage
   case class Enqueued() extends QueueMessage
   case class NewChallenge(server:String) extends QueueMessage
-  case class NoCompetition() extends QueueMessage
+  case class NoCompetition(reason:String) extends QueueMessage
 
   def serialize(queueMessage: QueueMessage):String = queueMessage match {
     case msg:Enqueued =>
       Json.obj("cmd" -> "enqueued").toString()
     case msg:NoCompetition =>
-      Json.obj("cmd" -> "noCompetition").toString()
+      Json.obj("cmd" -> "noCompetition",
+      "reason" -> msg.reason).toString()
 
     case msg:NewChallenge =>
       implicit val writer = Json.writes[NewChallenge]
@@ -90,7 +92,7 @@ object QueueMessages {
     val cmd = (js \ "cmd").as[String]
     cmd match {
       case "enqueued" => Some(Enqueued())
-      case "noCompetition" => Some(NoCompetition())
+      case "noCompetition" => (js \ "reason").toOption.map(_.as[String]).map(NoCompetition.apply)
       case "newChallenge" =>
         implicit val reader = Json.reads[NewChallenge]
         (js \ "body").toOption.flatMap(v => Json.fromJson[NewChallenge](v).asOpt)
@@ -128,10 +130,13 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo, glicko:Double
         out ! QueueMessages.serialize(QueueMessages.NewChallenge(server))
       case Success(("failed", reason:String)) =>
         Logger.info(s"failed with $reason")
-        out ! QueueMessages.serialize(QueueMessages.NoCompetition())
+        out ! QueueMessages.serialize(QueueMessages.NoCompetition(reason))
       case Failure(reason) =>
         Logger.info(s"failed with $reason")
-        out ! QueueMessages.serialize(QueueMessages.NoCompetition())
+        reason match {
+          case _:TimeoutException => out ! QueueMessages.serialize (QueueMessages.NoCompetition("no competition") )
+          case _ => out ! QueueMessages.serialize (QueueMessages.NoCompetition("internal server error") )
+        }
         out ! PoisonPill
       case _ => ???
     })

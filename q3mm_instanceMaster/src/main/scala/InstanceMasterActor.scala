@@ -17,12 +17,12 @@ class InstanceMasterActor extends Actor {
   private def areUsersRegistered(users:List[String]): Future[Boolean] = {
     import context.dispatcher
     log.debug(s"checking are users ${users} already registered in system")
-    Future.sequence(slaves.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))).map(
-      results => {
-        log.debug(s"search got results ${results}")
-        results.map(_.asInstanceOf[(String, String)]).filter(_._1 == "foundUser").exists(r => users.contains(r._2))
-      }
-    )
+    Future.find(slaves.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))) {
+      case req@("foundUser", foundUser) if users.contains(foundUser) =>
+        log.info(s"found user ${foundUser}")
+        true
+      case _ => false
+    }.map(_.isDefined)
   }
 
   override def receive: Receive = {
@@ -38,27 +38,27 @@ class InstanceMasterActor extends Actor {
 
     case request@("requestServer", owners:List[SteamUserInfo]) =>
       implicit val executionContext = context.dispatcher
-      val isAlreadyOwning = Try(Await.result(areUsersRegistered(owners.map(_.steamId)), 10 seconds))
-      isAlreadyOwning match {
+      val requestor = sender()
+      areUsersRegistered(owners.map(_.steamId)).onComplete({
         case Success(true) =>
           log.warning("user already in game")
-          sender() ! ("failed", "already in game")
+          requestor ! ("failed", "already in game")
         case Failure(ex) =>
           log.warning(s"during user registration check happened $ex")
-          sender() ! ("failed", "failued to query user existance")
+          requestor ! ("failed", "failued to query user existance")
         case Success(false) =>
           log.info(s"users are not registered, lets create server for them ${owners}")
           val randomSlave = slaves.find(_._2.potential > 0).map(_._1)
           if (randomSlave.isDefined) {
             log.info(s"forwarding creation request to $randomSlave")
             val slaveMeta = slaves(randomSlave.get)
-            slaves = slaves.updated(randomSlave.get, slaveMeta.copy(potential = slaveMeta.potential - 1))
+            slaves = slaves.updated(randomSlave.get, WorkerMetaInfo(slaveMeta.potential - 1, slaveMeta.maxPotential))
             randomSlave.get.forward(request)
           } else {
             log.error(s"no slave to satisfy creation request")
-            sender() ! ("failed", "not enough slaves")
+            requestor ! ("failed", "not enough slaves")
           }
-      }
+      })
 
     case "freeSlot" =>
       val newPotential = slaves(sender()).potential + 1

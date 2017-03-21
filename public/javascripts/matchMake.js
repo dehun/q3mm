@@ -1,4 +1,4 @@
-var baseUrl = "http://localhost:9000"
+var baseUrl = "http://hurtmeplenty.space:9000"
 
 var LoginBox = React.createClass({
     render: function() {
@@ -15,13 +15,16 @@ var LoginBox = React.createClass({
 
 var MatchMakeState = React.createClass({
     render: function() {
-        return (<div id="mm_state" className="state_box">{this.props.state}</div>)
+        return (<div id="mm_state" className="state_box">
+                <div>{this.props.state}</div>
+                <div><img src="assets/images/loader.gif"/></div>
+                </div>)
     }
 })
 
 var MatchMakeFail = React.createClass({
     render: function() {
-        return (<div id="mm_fail" className="state_box">{this.props.reason}</div>)
+        return (<div id="mm_fail" className="state_box">Fail: {this.props.reason}</div>)
     }
 })
 
@@ -71,8 +74,8 @@ var MatchMakeStartBox = React.createClass({
             return;
         }
         if (typeof msgs.data == 'undefined') return
-        msg = JSON.parse(msgs.data)
-        switch (msgs.cmd) {
+        var msg = JSON.parse(msgs.data)
+        switch (msg.cmd) {
         case "enqueued":
             this.setState({"phase": "enqueued"})
             break
@@ -80,7 +83,7 @@ var MatchMakeStartBox = React.createClass({
             this.setState({"phase": "newChallenge", "server": msg.body.server})
             break
         case "noCompetition":
-            this.setState({"phase": "fail", "reason": "no competition"})
+            this.setState({"phase": "fail", "reason": msg.reason})
             break
         }
     },
@@ -88,7 +91,7 @@ var MatchMakeStartBox = React.createClass({
         switch (this.state.phase) {
         case "idle":
             return (<MatchMakeButton onWsConnecting={this.onWsConnecting}
-                    onWsOpen={this.onWsOpen} onWsClosed={this.onWsClosed} onWsOpen={this.onWsMessage}/>)
+                    onWsOpen={this.onWsOpen} onWsClosed={this.onWsClosed} onWsMessage={this.onWsMessage}/>)
         case "connecting":
             return (<MatchMakeState state="connecting"/>)
         case "connected":
@@ -172,7 +175,7 @@ var Rules = React.createClass({
     render: function() {
         return (<div id="rules">
                 <h3>Rules</h3>
-                <ul>
+                <ul id="rules_list">
                 <li>Servers are deleted on inactivity, disconnects</li>
                 <li>Duels only</li>
                 <li>Glickos at the moment grabbed from <a href="qlstats.net">qlstats.net</a></li>
@@ -187,7 +190,8 @@ var LoggedInBox = React.createClass({
                 <div id="logged_in_box">
                   <div id="welcome">
                     <div>You are logged in as </div>
-                    <div><img src={this.props.userAvatar}/>{this.props.userName}</div>
+                    <div id="welcome_avatar"><img src={this.props.userAvatar}/></div>
+                    <div id="welcome_nick">{this.props.userName}</div>
                   </div>
                   <Rules/>
                   <MatchMakeBox/>

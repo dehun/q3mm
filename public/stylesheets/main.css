@@ -144,10 +144,11 @@ th {
     margin: auto;
 }
 
-button:hover {
-/*    box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);*/
+.big_button:hover {
+    box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);
     /* box-shadow: 0px 2px 2px 2px #333; */
-/*    border: */
+    /*    border: */
+    background-color: #990002;
 }
 
 #welcome {
@@ -183,4 +184,24 @@ a {
     color: #222;
     max-height: 200px;
     margin-top: 150px;
+}
+
+#footer:hover {
+    color: #eee;
+}
+
+#welcome_avatar {
+}
+
+h3 {
+    margin-bottom: 0px;
+}
+
+#rules_list {
+    margin-top: 0px;
+    list-style-type: square;
+}
+
+#rules {
+    margin-top: 0px;
 }
