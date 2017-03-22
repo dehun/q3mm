@@ -190,6 +190,10 @@ a {
     margin-top: 150px;
 }
 
+a.copylink {
+    color: #222;
+}
+
 #footer:hover {
     color: #eee;
 }
