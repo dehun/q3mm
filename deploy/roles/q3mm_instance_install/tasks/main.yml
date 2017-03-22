@@ -53,6 +53,11 @@
   copy:
     src: ../q3mm_instance/src/main/resources/duel.txt
     dest: ~/Steam/steamapps/common/qlds/duel.txt
+
+- name: generate configuration
+  template:
+    src: production.conf
+    dest: ~/q3mm/q3mm_instance-1.0-SNAPSHOT/conf/production.conf
     
 - name: install supervisord config
   copy:

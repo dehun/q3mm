@@ -1,11 +1,11 @@
 [front]
-q3mm.space ansible-user=root
+hurtmeplenty.space ansible-user=root
 
 [queue]
-q3mm.space ansible-user=root
+hurtmeplenty.space ansible-user=root
 
 [instanceMaster]
-q3mm.space ansible-user=root
+hurtmeplenty.space ansible-user=root
 
 [instance]
-q3mm.space ansible-user=root
+hurtmeplenty.space ansible-user=root

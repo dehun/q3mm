@@ -20,8 +20,8 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int) e
 
   import context._
   context.watch(server)
-  context.system.scheduler.scheduleOnce(120 seconds) { self ! "connect_timeout_check" }
-  context.system.scheduler.scheduleOnce(360 seconds) { self ! "match_start_check" }
+  context.system.scheduler.scheduleOnce(6 minutes) { self ! "connect_timeout_check" }
+  context.system.scheduler.scheduleOnce(15 minutes) { self ! "match_start_check" }
 
   private var playersCount = 0
   private var matchStarted = false
