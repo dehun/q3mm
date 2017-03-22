@@ -1,0 +1,7 @@
+---
+- name: stop q3mm front
+  supervisorctl:
+    name: q3mm_front
+    state: stopped
+
+

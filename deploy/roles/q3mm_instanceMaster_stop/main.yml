@@ -1,0 +1,5 @@
+---
+- name: stop q3mm instance master
+  supervisorctl:
+    name: q3mm_instanceMaster
+    state: stopped

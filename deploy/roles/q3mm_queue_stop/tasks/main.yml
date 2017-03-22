@@ -1,0 +1,5 @@
+---
+- name: stop q3mm queue
+  supervisorctl:
+    name: q3mm_queue
+    state: stopped

@@ -1,0 +1,33 @@
+---
+- name: stop q3mm front
+  hosts: front
+  user: root
+  become: yes
+  roles:
+    - q3mm_front_stop    
+    - q3mm_front_start
+
+- name: stop q3mm queue
+  hosts: queue
+  user: root
+  become: yes
+  roles:
+    - q3mm_queue_stop
+    - q3mm_queue_start
+    
+
+- name: stop q3mm instance master
+  hosts: instanceMaster
+  user: root
+  become: yes
+  roles:
+    - q3mm_instanceMaster_stop
+    - q3mm_instanceMaster_start    
+
+- name: stop q3mm instance 
+  hosts: instance
+  user: root
+  become: yes
+  roles:
+    - q3mm_instance_stop
+    - q3mm_instance_start
