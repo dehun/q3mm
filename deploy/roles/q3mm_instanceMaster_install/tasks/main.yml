@@ -13,4 +13,4 @@
   unarchive:
     copy: yes
     dest: ~/q3mm/
-    src: ../q3mm_instanceMaster/target/universal/q3mm_instancemaster-1.0-SNAPSHOT.zip  
+    src: ../q3mm_instanceMaster/target/universal/q3mm_instancemaster-1.0-SNAPSHOT.zip

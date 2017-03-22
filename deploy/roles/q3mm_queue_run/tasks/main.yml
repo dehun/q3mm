@@ -1,6 +1,7 @@
 ---
 - name: run q3mm queue
-  shell: daemon -- ./bin/q3mm_queue
-  args:
-    chdir: ~/q3mm/q3mm_queue-1.0-SNAPSHOT
+  supervisorctl:
+    name: q3mm_queue
+    state: started
+
 

@@ -1,6 +1,5 @@
 ---
 - name: run q3mm instance
-  shell: daemon -- ./bin/q3mm_instance
-  args:
-    chdir: ~/q3mm/q3mm_instance-1.0-SNAPSHOT
-
+  supervisorctl:
+    name: q3mm_instance
+    state: started
