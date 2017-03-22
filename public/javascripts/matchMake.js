@@ -1,4 +1,4 @@
-var baseUrl = "http://hurtmeplenty.space:9000"
+var baseUrl = "http://hurtmeplenty.space"
 
 var LoginBox = React.createClass({
     render: function() {

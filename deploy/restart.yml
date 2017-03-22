@@ -5,7 +5,7 @@
   become: yes
   roles:
     - q3mm_front_stop    
-    - q3mm_front_start
+    - q3mm_front_run
 
 - name: stop q3mm queue
   hosts: queue
@@ -13,7 +13,7 @@
   become: yes
   roles:
     - q3mm_queue_stop
-    - q3mm_queue_start
+    - q3mm_queue_run
     
 
 - name: stop q3mm instance master
@@ -22,7 +22,7 @@
   become: yes
   roles:
     - q3mm_instanceMaster_stop
-    - q3mm_instanceMaster_start    
+    - q3mm_instanceMaster_run    
 
 - name: stop q3mm instance 
   hosts: instance
@@ -30,4 +30,4 @@
   become: yes
   roles:
     - q3mm_instance_stop
-    - q3mm_instance_start
+    - q3mm_instance_run
