@@ -4,9 +4,16 @@
     path: ~/q3mm
     state: directory
 
+- name: install supervisord config
+  copy:
+    src: q3mm_front.conf
+    dest: /etc/supervisor/conf.d/q3mm_front.conf
+
 - name: upload q3mm front
   unarchive:
     copy: yes
     dest: ~/q3mm/
-    src: ../target/universal/q3mm-1.0-SNAPSHOT.zip      
+    src: ../target/universal/q3mm-1.0-SNAPSHOT.zip
+
+
 

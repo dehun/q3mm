@@ -4,6 +4,11 @@
     path: ~/q3mm
     state: directory
 
+- name: install supervisord config
+  copy:
+    src: q3mm_queue.conf
+    dest: /etc/supervisor/conf.d/q3mm_queue.conf    
+
 - name: upload q3mm queue
   unarchive:
     copy: yes

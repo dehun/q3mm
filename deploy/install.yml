@@ -1,11 +1,35 @@
 ---
-- name: install q3mm modules
+- name: system setup
   hosts: all
   user: root
   become: yes
   roles:
     - system_setup
+
+- name: install front
+  hosts: front
+  user: root
+  become: yes
+  roles:
     - q3mm_front_install
+
+- name: install queue
+  hosts: queue
+  user: root
+  become: yes
+  roles:
     - q3mm_queue_install
+
+- name: install instanceMaster
+  hosts: instanceMaster
+  user: root
+  become: yes
+  roles:
     - q3mm_instanceMaster_install
+
+- name: install instanceMaster
+  hosts: instance
+  user: root
+  become: yes
+  roles:    
     - q3mm_instance_install

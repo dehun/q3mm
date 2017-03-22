@@ -1,0 +1,19 @@
+---
+- name: install system deps
+  apt:
+    name: "{{item}}"
+    state: latest
+  with_items:
+    - openjdk-8-jre
+    - libzmq-java
+    - libzmq-jni
+    - unzip
+    - python-pip
+    - supervisor
+
+- name: prepare logs directory
+  file:
+    path: /var/log/q3mm
+    state: directory
+
+
