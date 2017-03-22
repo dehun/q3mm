@@ -20,7 +20,8 @@ class QueueActor extends Actor {
   private case class Tick()
 
   import context.dispatcher
-  private val ticker = context.system.scheduler.schedule(30 seconds, 30 seconds, self, Tick())
+  private val pickupInterval = 1 minute
+  private val ticker = context.system.scheduler.schedule(pickupInterval, pickupInterval, self, Tick())
 
   private var queue = Map.empty[String, GameRequest]
   private val maxGlickoGap = 300
