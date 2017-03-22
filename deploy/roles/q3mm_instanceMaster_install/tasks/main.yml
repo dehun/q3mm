@@ -4,13 +4,16 @@
     path: ~/q3mm
     state: directory
 
-- name: install supervisord config
-  copy:
-    src: q3mm_instanceMaster.conf
-    dest: /etc/supervisor/conf.d/q3mm_instanceMaster.conf    
-
 - name: upload q3mm instanceMaster
   unarchive:
     copy: yes
     dest: ~/q3mm/
     src: ../q3mm_instanceMaster/target/universal/q3mm_instancemaster-1.0-SNAPSHOT.zip
+
+- name: install supervisord config
+  copy:
+    src: q3mm_instanceMaster.conf
+    dest: /etc/supervisor/conf.d/q3mm_instanceMaster.conf
+
+- name: reload supervisord
+  shell: supervisorctl reload

@@ -4,11 +4,6 @@
     path: ~/q3mm
     state: directory
 
-- name: install supervisord config
-  copy:
-    src: q3mm_instance.conf
-    dest: /etc/supervisor/conf.d/q3mm_instance.conf    
-
 - name: upload q3mm instance
   unarchive:
     copy: yes
@@ -59,3 +54,11 @@
     src: ../q3mm_instance/src/main/resources/duel.txt
     dest: ~/Steam/steamapps/common/qlds/duel.txt
     
+- name: install supervisord config
+  copy:
+    src: q3mm_instance.conf
+    dest: /etc/supervisor/conf.d/q3mm_instance.conf
+
+- name: reload supervisord
+  shell: supervisorctl reload
+
