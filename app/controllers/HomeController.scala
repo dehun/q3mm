@@ -12,15 +12,16 @@ import play.api.mvc._
  */
 @Singleton
 class HomeController @Inject() (configuration: play.api.Configuration) extends Controller {
-  def index = Action {
-    request => {
-      implicit val reads = Json.reads[SteamUserInfo]
-      Ok(views.html.index(
-        request.session.get("steamUserInfo").flatMap(v =>
-          SteamUserInfo.fromJson(v)),
-        configuration.underlying.getString("q3mm.wsUrl")))
-    }
-  }
+  def index = about
+    //Action {
+//    request => {
+//      implicit val reads = Json.reads[SteamUserInfo]
+//      Ok(views.html.index(
+//        request.session.get("steamUserInfo").flatMap(v =>
+//          SteamUserInfo.fromJson(v)),
+//        configuration.underlying.getString("q3mm.wsUrl")))
+//    }
+//  }
 
   def about = Action {
     Ok(views.html.about())
