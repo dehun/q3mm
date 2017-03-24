@@ -191,7 +191,7 @@ a {
 }
 
 a.copylink {
-    color: #222;
+    color: inherit;
 }
 
 #footer:hover {

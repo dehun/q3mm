@@ -55,7 +55,7 @@ class OnDemandController @Inject () (configuration: play.api.Configuration)
                     Created(Json.obj("server" -> server).toString)
                   case ("failed", reason:String) =>
                     Logger.info(s"server creation failed with reason ${reason}")
-                    InternalServerError(reason)
+                    Conflict(reason)
                   case x =>
                     Logger.error(s"unknown message received ${x.toString}")
                     InternalServerError(x.toString)

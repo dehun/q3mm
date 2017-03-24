@@ -16,12 +16,12 @@ object QLServer {
   }
 
   object Endpoints {
-    def random(interface:String, serverIndex:Int) = Endpoints(
+    def random(interface:String, statsPassword:String, serverIndex:Int) = Endpoints(
       interface,
       27960 + serverIndex,
       1024 + Random.nextInt(32768),
       Random.alphanumeric.take(10).mkString,
-      Random.alphanumeric.take(10).mkString,
+      statsPassword,
       Random.alphanumeric.take(10).mkString)
   }
 

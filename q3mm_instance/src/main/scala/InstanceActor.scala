@@ -61,7 +61,10 @@ class InstanceActor extends Actor {
       } else {
         val serverIndex = if (servers.isEmpty) 0 else List(servers.keys.min - 1, servers.keys.max + 1).filter(_ > 0).min
         log.info(s"request for server, lets spawn one more with idx ${serverIndex}!")
-        val endpoints = Endpoints.random(context.system.settings.config.getString("q3mm.instanceInterface"), serverIndex)
+        val endpoints = Endpoints.random(
+          context.system.settings.config.getString("q3mm.instanceInterface"),
+          context.system.settings.config.getString("q3mm.statsPassword"),
+          serverIndex)
         // spawn server
         val server = context.actorOf(Props(new QLWatchedServer(endpoints, serverIndex, owners)))
         context.watch(server)

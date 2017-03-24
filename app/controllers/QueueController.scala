@@ -29,7 +29,9 @@ class QueueController @Inject() (ws:WSClient, configuration: play.api.Configurat
     val request = ws.url(url)
     Logger.info(s"getting glicko from ${url}")
     request.get().map(response => {
-      Try((response.json \ 0 \ "elos" \ "duel" \ "g2_r").as[Double]).getOrElse(0.0)
+      Try((response.json \ 0 \ "elos" \ "duel" \ "g2_r").as[Double])
+        .orElse(Try((response.json \ 0 \ "elos" \ "ffa" \ "g2_r").as[Double]))
+        .getOrElse(1500.0)
     })
   }
 
@@ -121,7 +123,7 @@ class QueueWebSocketAcceptor(out:ActorRef, userInfo:SteamUserInfo, glicko:Double
 
   @scala.throws[Exception](classOf[Exception])
   override def preStart(): Unit = {
-    implicit val timeout = Timeout(60 seconds)
+    implicit val timeout = Timeout(20 minutes)
     out ! QueueMessages.serialize(QueueMessages.Enqueued())
     val res = queueProxy.resolveOne(5 seconds).flatMap(qp => ask(qp, ("enqueue", userInfo, glicko)))
     res.onComplete({
