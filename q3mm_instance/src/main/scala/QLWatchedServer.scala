@@ -15,7 +15,7 @@ class QLWatchedServer(endpoints: Endpoints, serverIdx:Int, owners:List[SteamUser
   }
 
   private val server = QLServer.spawn(context, endpoints, owners)
-  private val watchdog = context.actorOf(Props(new QLServerWatchdog(endpoints, server, serverIdx)))
+  private val watchdog = context.actorOf(Props(new QLServerWatchdog(owners, endpoints, server, serverIdx)))
   context.watch(watchdog)
 
   override def receive: Receive = {

@@ -4,13 +4,15 @@ import akka.actor.{ActorRef, PoisonPill}
 import akka.event.Logging
 import akka.util.Timeout
 import akka.actor._
+import controllers.SteamUserInfo
 
 import scala.concurrent.duration._
 import scala.util.Try
 import play.api.libs.json
 import play.api.libs.json.{JsValue, Json}
 
-class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int) extends QLStatsMonitorActor(endpoints) {
+class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
+                       server:ActorRef, serverIndex:Int) extends QLStatsMonitorActor(endpoints) {
   private val log = Logging(context.system, this)
 
   override val supervisorStrategy = AllForOneStrategy(
@@ -56,8 +58,17 @@ class QLServerWatchdog(endpoints: Endpoints, server:ActorRef, serverIndex:Int) e
     log.warning(s"stats_event ${stats_event}")
     (stats_event \ "TYPE").as[String] match {
       case "PLAYER_DISCONNECT" =>
-        log.info("player disconnected, just die")
-        self ! PoisonPill
+        log.info("player disconnected")
+        val disconnectedId = (stats_event \ "TYPE" \ "DATA" \ "STEAM_ID").toOption.map(_.as[String])
+        if (owners.exists(o => disconnectedId.contains(o))) {
+          log.info("owner disconnected, die!")
+          self ! PoisonPill
+        }
+        playersCount -= 1
+        if (playersCount <= 0) {
+          log.info("0 playersleft , die")
+          self ! PoisonPill
+        }
       case "PLAYER_SWITCHTEAM" =>
         if ((stats_event \ "DATA" \ "KILLER"\ "TEAM").as[String] =="FREE") {
           playersCount += 1

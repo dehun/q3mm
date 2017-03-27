@@ -4,7 +4,9 @@ var LoginBox = React.createClass({
     render: function() {
             return (
             <div id="login_box">
-                    <p>In order to use this service you have to login via steam</p>
+                    <p>In order to use this service you have to login via steam. </p>
+                    <p>This website uses cookies to provide better user experience.
+                    By logging in you accept cookies.</p>
                     <LoginButton/>
             </div>)
     }
@@ -27,9 +29,17 @@ var MatchMakeFail = React.createClass({
 
 var ConnectToServer = React.createClass({
     render: function() {
+        // notification
+        if (Notification.permission == "granted") {
+            var msg = {body: "server is ready for you at " + $this.props.server,
+                       icon: "assets/images/qlico.png"}
+            var n = new Notification('Server is ready', msg);
+            setTimeout(n.close.bind(n), 5000);
+        }
+        // 
         setTimeout(function() {
             window.location.replace(this.props.server)
-        }, 3000)
+        }, 5000)
         return (
                 <div id="connect_to_server" className="state_box">
                     <a href={this.props.server} className="server_link">{this.props.server}</a>
@@ -183,6 +193,7 @@ var Rules = React.createClass({
 
 var LoggedInBox = React.createClass({
     render: function() {
+        Notification.requestPermission()
         return (
                 <div id="logged_in_box">
                   <div id="welcome">
