@@ -51,7 +51,7 @@ object QLServer {
       "+set", "g_password", s"${endpoints.gamePassword}",
       "+set", "g_voteFlags", "0",
       "+set", "g_dropInactive", "1",
-      "+set", "g_inactivity", "60",
+      "+set", "g_inactivity", "500",
       "+set", "g_allowVoteMidGame", "0",
       "+set", "g_allowSpecVote", "0",
 //      "+set", "sv_master", "1",

@@ -29,14 +29,14 @@ var MatchMakeFail = React.createClass({
 
 var ConnectToServer = React.createClass({
     render: function() {
-        // notification
-        if (Notification.permission == "granted") {
-            var msg = {body: "server is ready for you at " + $this.props.server,
-                       icon: "assets/images/qlico.png"}
-            var n = new Notification('Server is ready', msg);
-            setTimeout(n.close.bind(n), 5000);
-        }
-        // 
+        // // notification
+        // if (Notification.permission == "granted") {
+        //     var msg = {body: "server is ready for you at " + $this.props.server,
+        //                icon: "assets/images/qlico.png"}
+        //     var n = new Notification('Server is ready', msg);
+        //     setTimeout(n.close.bind(n), 5000);
+        // }
+        // // 
         setTimeout(function() {
             window.location.replace(this.props.server)
         }, 5000)
@@ -193,7 +193,7 @@ var Rules = React.createClass({
 
 var LoggedInBox = React.createClass({
     render: function() {
-        Notification.requestPermission()
+        // Notification.requestPermission() 
         return (
                 <div id="logged_in_box">
                   <div id="welcome">

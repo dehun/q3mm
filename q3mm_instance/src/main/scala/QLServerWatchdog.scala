@@ -23,7 +23,7 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
   import context._
   context.watch(server)
   context.system.scheduler.scheduleOnce(6 minutes) { self ! "connect_timeout_check" }
-  context.system.scheduler.scheduleOnce(15 minutes) { self ! "match_start_check" }
+  context.system.scheduler.scheduleOnce(30 minutes) { self ! "match_start_check" }
 
   private var playersCount = 0
   private var matchStarted = false
