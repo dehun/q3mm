@@ -49,7 +49,7 @@ var ConnectToServer = React.createClass({
  
 var MatchMakeButton = React.createClass({
     render: function() {
-        return (<button id="match_make_button" className="big_button" onClick={this.onClick}>Start match</button>)
+        return (<button id="match_make_button" className="big_button" onClick={this.onClick}>Find match</button>)
     },
     onClick: function() {
         var socket = new WebSocket(wshost);

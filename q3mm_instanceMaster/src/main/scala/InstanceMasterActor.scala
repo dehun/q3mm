@@ -14,15 +14,15 @@ class InstanceMasterActor extends Actor {
   private val log = Logging(context.system, this)
   private var slaves = Map.empty[ActorRef, WorkerMetaInfo]
 
-  private def areUsersRegistered(users:List[String]): Future[Boolean] = {
+  private def areUsersRegistered(users:List[String]): Future[Option[String]] = {
     import context.dispatcher
     log.debug(s"checking are users ${users} already registered in system")
     Future.find(slaves.keys.flatMap(s => users.map(owner => ask(s, ("findUser", owner))(10 seconds)))) {
-      case req@("foundUser", foundUser) if users.contains(foundUser) =>
-        log.info(s"found user ${foundUser}")
+      case req@("foundUser", foundUser, gameUri) if users.contains(foundUser) =>
+        log.info(s"found user ${foundUser} at ${gameUri}")
         true
       case _ => false
-    }.map(_.isDefined)
+    }.map(_.map({case ("foundUser", _, gameUri:String) => gameUri}))
   }
 
   override def receive: Receive = {
@@ -40,13 +40,13 @@ class InstanceMasterActor extends Actor {
       implicit val executionContext = context.dispatcher
       val requestor = sender()
       areUsersRegistered(owners.map(_.steamId)).onComplete({
-        case Success(true) =>
+        case Success(Some(_)) =>
           log.warning("user already in game")
           requestor ! ("failed", "already in game")
         case Failure(ex) =>
           log.warning(s"during user registration check happened $ex")
           requestor ! ("failed", "failued to query user existance")
-        case Success(false) =>
+        case Success(None) =>
           log.info(s"users are not registered, lets create server for them ${owners}")
           val randomSlave = slaves.find(_._2.potential > 0).map(_._1)
           if (randomSlave.isDefined) {
@@ -70,5 +70,13 @@ class InstanceMasterActor extends Actor {
       val maxServers = slaves.values.map(_.maxPotential).sum
       val leftServers = slaves.values.map(_.potential).sum
       sender() ! InstanceMasterStats(maxServers - leftServers, maxServers)
+
+    case ("findMyServer", steamId:String) =>
+      import context.dispatcher
+      val requester = sender()
+      areUsersRegistered(List(steamId)).recover({case _ => None}).onSuccess({
+        case Some(uri) => requester ! ("serverAt", uri)
+        case None => requester ! "noServer"
+      })
   }
 }

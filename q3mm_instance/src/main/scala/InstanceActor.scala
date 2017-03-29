@@ -89,7 +89,7 @@ class InstanceActor extends Actor {
       log.debug(s"searching for the user ${steamId}")
       val requestor = sender()
       val findFuture = Future.find(servers.values.map(s => ask(s, request))) {
-        case ("foundUser", foundSteamId) => foundSteamId == steamId
+        case ("foundUser", foundSteamId, _) => foundSteamId == steamId
         case _ => false
       }.onComplete({
         case Success(Some(result)) =>

@@ -1,0 +1,11 @@
+@(yourServer:Option[String])
+
+@main("my server") {
+<div>
+    @if(yourServer.isDefined) {
+    Your server is at <a href="@yourServer.get">@yourServer.get</a>
+    } else {
+    You have no active servers
+    }
+</div>
+}

@@ -4,6 +4,8 @@
 
 GET     /                           controllers.HomeController.index
 GET     /about                      controllers.HomeController.about
+GET     /my_stats                   controllers.HomeController.myStats
+GET     /my_servers                 controllers.OnDemandController.findServer
 GET     /matchmake                  controllers.QueueController.matchMake
 GET     /on_demand                  controllers.OnDemandController.onDemand
 GET     /backend_stats              controllers.BackendStatsController.stats

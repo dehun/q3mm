@@ -12,6 +12,7 @@ import akka.util.Timeout
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import play.api._
 import play.api.libs.ws._
 import play.api.mvc._
@@ -64,5 +65,19 @@ class OnDemandController @Inject () (configuration: play.api.Configuration)
               Future.successful(Forbidden)
           }
   }})
+
+  def findServer = Action.async({
+    implicit request => {
+      request.session.get("steamUserInfo").flatMap(SteamUserInfo.fromJson) match {
+        case None => Future.successful(Redirect(routes.LoginController.loginPost))
+        case Some(userInfo:SteamUserInfo) =>
+          implicit val timeout = Timeout(5 seconds)
+          ask (instanceMasterProxy, ("findMyServer", userInfo.steamId)).map ( {
+            case ("serverAt", uri:String) => Ok(views.html.myserver(Some(uri)))
+            case "noServer" => Ok(views.html.myserver(None))
+          }).recover({case _ =>Ok(views.html.myserver(None))})
+      }
+    }
+  })
 
 }

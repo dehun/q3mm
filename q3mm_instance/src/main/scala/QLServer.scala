@@ -81,7 +81,7 @@ class QLServer(process:Process, val endpoints:QLServer.Endpoints, owners:List[St
     case ("findUser", steamId) =>
       //log.debug(s"qlserver searching for user ${steamId}")
       if (owners.exists(_.steamId == steamId))
-        sender() ! ("foundUser", steamId)
+        sender() ! ("foundUser", steamId, endpoints.url)
       else
         sender() ! ("userNotFound", steamId)
   }

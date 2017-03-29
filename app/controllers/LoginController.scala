@@ -54,4 +54,5 @@ class LoginController @Inject() (ws:WSClient)(openIdClient: OpenIdClient) extend
             })
       })
   }
+
 }
