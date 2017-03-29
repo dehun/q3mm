@@ -37,6 +37,17 @@ body {
     background-color: #AA1113;
 }
 
+#title_image {
+    width: 90px;
+    height: 90px;
+    padding-right: 50px;
+    padding-left: 50px;
+}
+
+#title {
+    display: inline;
+}
+
 #main_menu {
     list-style-type: none;
     margin: 0;

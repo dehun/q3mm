@@ -22,7 +22,7 @@ object QLServer {
       1024 + Random.nextInt(32768),
       Random.alphanumeric.take(10).mkString,
       statsPassword,
-      Random.alphanumeric.take(10).mkString)
+      Random.alphanumeric.take(5).mkString)
   }
 
   def spawn(context: ActorContext, endpoints: Endpoints,
