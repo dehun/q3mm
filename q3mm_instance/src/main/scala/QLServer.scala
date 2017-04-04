@@ -12,7 +12,11 @@ import scala.util.Random
 
 object QLServer {
   case class Endpoints(interface:String, gamePort:Int, rconPort:Int, rconPassword:String, statsPassword:String, gamePassword:Option[String], glicko:Int) {
-    val url:String = s"steam://connect/$interface:$gamePort/$gamePassword"
+    val url:String = {
+      val baseUrl = s"steam://connect/$interface:$gamePort"
+      if (gamePassword.isDefined) s"$baseUrl/${gamePassword.get}"
+      else baseUrl
+    }
   }
 
   object Endpoints {

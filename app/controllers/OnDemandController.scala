@@ -53,7 +53,7 @@ class OnDemandController @Inject () (ws:WSClient, configuration: play.api.Config
   def requestServer =
     Action.async({
     implicit request =>
-      request.session.get("steamUserInfo").map(SteamUserInfo.fromJson) match {
+      request.session.get("steamUserInfo").flatMap(SteamUserInfo.fromJson) match {
         case None => {
           Logger.info(s"can not get or deserialize steamUserInfo, forbid access, session is ${request.session.data}")
           Future.successful(Forbidden)
