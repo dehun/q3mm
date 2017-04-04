@@ -59,7 +59,7 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
     (stats_event \ "TYPE").as[String] match {
       case "PLAYER_DISCONNECT" =>
         log.info("player disconnected")
-        val disconnectedId = (stats_event \ "TYPE" \ "DATA" \ "STEAM_ID").toOption.map(_.as[String])
+        val disconnectedId = (stats_event \ "DATA" \ "STEAM_ID").toOption.map(_.as[String])
         if (owners.exists(o => disconnectedId.contains(o))) {
           log.info("owner disconnected, die!")
           self ! PoisonPill

@@ -11,18 +11,19 @@ import scala.sys.process._
 import scala.util.Random
 
 object QLServer {
-  case class Endpoints(interface:String, gamePort:Int, rconPort:Int, rconPassword:String, statsPassword:String, gamePassword:String) {
+  case class Endpoints(interface:String, gamePort:Int, rconPort:Int, rconPassword:String, statsPassword:String, gamePassword:Option[String], glicko:Int) {
     val url:String = s"steam://connect/$interface:$gamePort/$gamePassword"
   }
 
   object Endpoints {
-    def random(interface:String, statsPassword:String, serverIndex:Int) = Endpoints(
+    def random(interface:String, statsPassword:String, serverIndex:Int, isPrivate:Boolean, glicko:Int) = Endpoints(
       interface,
       27960 + serverIndex,
       1024 + Random.nextInt(32768),
       Random.alphanumeric.take(10).mkString,
       statsPassword,
-      Random.alphanumeric.take(5).mkString)
+      if (isPrivate) Some(Random.alphanumeric.take(5).mkString) else None,
+      glicko)
   }
 
   def spawn(context: ActorContext, endpoints: Endpoints,
@@ -37,18 +38,19 @@ object QLServer {
     // spawn
     val log = Logging(context.system, context.self)
     log.info(s"spawning new server! $endpoints")
+    val serverName = s"${endpoints.glicko} Elo/glicko; vs ${owners.head.personaName}; http://hurtmeplenty.space slave"
     val cmdLine = Seq("./qzeroded.x64",
       "+set", "net_strict", "1",
       "+set", "net_ip", s"${endpoints.interface}",
       "+set", "net_port", s"${endpoints.gamePort}",
-      "+set", "sv_hostname", "hurtmeplenty.space slave",
+      "+set", "sv_hostname", serverName,
       "+set", "zmq_rcon_enable", "1",
       "+set", "zmq_rcon_password", s"${endpoints.rconPassword}",
       "+set", "zmq_rcon_port", s"${endpoints.rconPort}",
       "+set", "zmq_stats_enable", "1",
       "+set", "zmq_stats_password", s"${endpoints.statsPassword}",
       "+set", "zmq_stats_port", s"${endpoints.gamePort}",
-      "+set", "g_password", s"${endpoints.gamePassword}",
+      "+set", "g_password", s"${endpoints.gamePassword.getOrElse("")}",
       "+set", "g_voteFlags", "0",
       "+set", "g_dropInactive", "1",
       "+set", "g_inactivity", "500",

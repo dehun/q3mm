@@ -60,7 +60,7 @@ class QueueActor extends Actor {
           queue -= leftReq.userInfo.steamId
           queue -= rightReq.userInfo.steamId
           implicit val timeout = Timeout(instanceCreationTimeout)
-          ask(instanceMasterProxy, ("requestServer", List(leftReq.userInfo, rightReq.userInfo)))
+          ask(instanceMasterProxy, ("requestServer", List(leftReq.userInfo, rightReq.userInfo), true, leftReq.glicko.toInt))
             .onComplete({
               case Failure(ex)=> Seq(leftReq.requester, rightReq.requester).foreach(_ ! ("failed", ex))
               case Success(("created", serverAddress)) =>

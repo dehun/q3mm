@@ -122,6 +122,7 @@ var OnDemandStartButton = React.createClass({
         $.ajax({
             url: baseUrl + "/requestServer",
             dataType: 'json',
+            data: { "isPrivate": this.props.isPrivate},
             cache: false,
             success: function(data) {
                 this.props.onSuccess(data)
@@ -134,17 +135,38 @@ var OnDemandStartButton = React.createClass({
     }
 })
 
+var OnDemandIsPrivate = React.createClass({
+    render: function() {
+        return (<div id="isPrivateDiv">
+                <label>Create private:</label>
+                <input id="isPrivateCheckbox"
+                       name="isPrivate"
+                       type="checkbox"
+                       checked={this.props.isPrivate}
+                       onChange={this.onChange}/>
+                </div>)
+    },
+    onChange: function(event) {
+        this.props.togglePrivacy()
+    }
+})
+
 var OnDemandStartBox = React.createClass({
     getInitialState: function() {
-        return {"phase": "idle"}
+        return {"phase": "idle", "isPrivate": false}
     },
     render: function() {
         switch (this.state.phase) {
         case "idle":
-            return (<OnDemandStartButton
+            return (<div>
+                    <OnDemandIsPrivate togglePrivacy={this.togglePrivacy} checked={this.state.isPrivate}/>
+                    <OnDemandStartButton
                     onRequested={this.onServerRequested}
                     onSuccess={this.onServerRequestSuccess}
-                    onError={this.onServerRequestFailure}/>)
+                    onError={this.onServerRequestFailure}
+                    isPrivate={this.state.isPrivate}
+                    />
+                   </div>)
         case "requested":
             return (<MatchMakeState state="awaiting server state"/>)
         case "created":
@@ -153,14 +175,18 @@ var OnDemandStartBox = React.createClass({
             return (<MatchMakeFail reason={this.state.reason}/>)
         }
     },
+    togglePrivacy: function() {
+        this.setState({ "phase": this.state.phase,
+                        "isPrivate": !this.state.isPrivate})
+    },
     onServerRequested: function() {
-        this.setState({"phase": "requested"})
+        this.setState({"phase": "requested", "isPrivate": this.state.isPrivate})
     },
     onServerRequestSuccess: function(msg) {
-        this.setState({"phase": "created", "server": msg.server})
+        this.setState({"phase": "created", "server": msg.server, "isPrivate": this.state.isPrivate})
     },
     onServerRequestFailure: function(reason) {
-        this.setState({"phase": "fail", "reason": reason})
+        this.setState({"phase": "fail", "reason": reason, "isPrivate": this.state.isPrivate})
     }
 })
 

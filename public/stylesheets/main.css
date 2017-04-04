@@ -224,3 +224,12 @@ h3 {
 #rules {
     margin-top: 0px;
 }
+
+#isPrivateDiv {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+#isPrivateCheckbox {
+    padding-left: 50px;
+}

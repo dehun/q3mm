@@ -53,7 +53,7 @@ class InstanceActor extends Actor {
     case "connectToMaster" =>
       connectToMaster()
 
-    case ("requestServer", owners: List[SteamUserInfo]) =>
+    case ("requestServer", owners: List[SteamUserInfo], isPrivate:Boolean, glicko:Int) =>
       if (servers.size >= maxServers) {
         log.warning("failing server creation request: overpopulated")
         instanceMasterProxy.foreach(_ ! "freeSlot")
@@ -64,7 +64,7 @@ class InstanceActor extends Actor {
         val endpoints = Endpoints.random(
           context.system.settings.config.getString("q3mm.instanceInterface"),
           context.system.settings.config.getString("q3mm.statsPassword"),
-          serverIndex)
+          serverIndex, isPrivate=isPrivate, glicko)
         // spawn server
         val server = context.actorOf(Props(new QLWatchedServer(endpoints, serverIndex, owners)))
         context.watch(server)

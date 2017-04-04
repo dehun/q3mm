@@ -36,7 +36,7 @@ class InstanceMasterActor extends Actor {
       log.warning(s"slave $deadOne is dead")
       slaves -= deadOne
 
-    case request@("requestServer", owners:List[SteamUserInfo]) =>
+    case request@("requestServer", owners:List[SteamUserInfo], isPrivate:Boolean, glicko:Int) =>
       implicit val executionContext = context.dispatcher
       val requestor = sender()
       areUsersRegistered(owners.map(_.steamId)).onComplete({
