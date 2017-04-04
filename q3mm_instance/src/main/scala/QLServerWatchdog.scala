@@ -25,7 +25,7 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
   context.system.scheduler.scheduleOnce(20 minutes) { self ! "connect_timeout_check" }
   context.system.scheduler.scheduleOnce(30 minutes) { self ! "match_start_check" }
 
-  private var playersCount = 0
+  private var players = Set.empty[String]
   private var matchStarted = false
 
   override def receive: Receive = {
@@ -33,7 +33,7 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
       Try(Json.parse(stats_event_str)).foreach(handle_stats_event)
 
     case "connect_timeout_check" =>
-      if (playersCount < 2) {
+      if ((players & owners.map(_.steamId).toSet) != owners) {
         log.warning("less than 2 players, kill the server")
         server ! PoisonPill
       }
@@ -59,20 +59,19 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
     (stats_event \ "TYPE").as[String] match {
       case "PLAYER_DISCONNECT" =>
         log.info("player disconnected")
-        val disconnectedId = (stats_event \ "DATA" \ "STEAM_ID").toOption.map(_.as[String])
-        if (owners.exists(o => disconnectedId.contains(o))) {
+        for {disconnectedId <- (stats_event \ "DATA" \ "STEAM_ID").toOption.map(_.as[String]) } {
+          players -= disconnectedId
+        }
+        if ((players & owners.map(_.steamId).toSet).isEmpty) {
           log.info("owner disconnected, die!")
           self ! PoisonPill
         }
-        playersCount -= 1
-        if (playersCount <= 0) {
-          log.info("0 playersleft , die")
-          self ! PoisonPill
-        }
+
       case "PLAYER_SWITCHTEAM" =>
         if ((stats_event \ "DATA" \ "KILLER"\ "TEAM").as[String] =="FREE") {
-          playersCount += 1
-          log.info(s"player joined the match, now we have ${playersCount} players")
+          for {steamId <- (stats_event \ "DATA" \ "KILLER" \ "STEAM_ID").toOption.map(_.as[String])} {
+            players += steamId
+          }
         }
       case "MATCH_STARTED" =>
         matchStarted = true
