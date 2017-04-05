@@ -33,8 +33,9 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
       Try(Json.parse(stats_event_str)).foreach(handle_stats_event)
 
     case "connect_timeout_check" =>
-      if ((players & owners.map(_.steamId).toSet) != owners) {
-        log.warning("less than 2 players, kill the server")
+      val ownersIds = owners.map(_.steamId).toSet
+      if (ownersIds.subsetOf(players)) {
+        log.warning("have not saw owners, kill the server")
         server ! PoisonPill
       }
 
@@ -71,6 +72,7 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
         if ((stats_event \ "DATA" \ "KILLER"\ "TEAM").as[String] =="FREE") {
           for {steamId <- (stats_event \ "DATA" \ "KILLER" \ "STEAM_ID").toOption.map(_.as[String])} {
             players += steamId
+            log.info(s"players now ${players}")
           }
         }
       case "MATCH_STARTED" =>
