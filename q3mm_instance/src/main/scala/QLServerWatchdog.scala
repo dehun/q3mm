@@ -34,8 +34,8 @@ class QLServerWatchdog(owners:List[SteamUserInfo], endpoints: Endpoints,
 
     case "connect_timeout_check" =>
       val ownersIds = owners.map(_.steamId).toSet
-      if (ownersIds.subsetOf(players)) {
-        log.warning("have not saw owners, kill the server")
+      if (!ownersIds.subsetOf(players)) {
+        log.warning(s"have not saw owners $ownersIds among $players, kill the server")
         server ! PoisonPill
       }
 

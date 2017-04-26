@@ -226,10 +226,14 @@ var LoggedInBox = React.createClass({
                     <div>You are logged in as </div>
                     <div id="welcome_avatar"><img src={this.props.userAvatar}/></div>
                     <div id="welcome_nick">{this.props.userName}</div>
+                    <button id="logout_button" className="small_button" onClick={this.logout}>Logout</button> 
                   </div>
                   <Rules/>
                   <MatchMakeBox/>
                 </div>)
+    },
+    logout: function() {
+        window.location.replace(baseUrl + "/logout") 
     }
 })
 

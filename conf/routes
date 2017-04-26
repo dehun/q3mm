@@ -15,6 +15,7 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 
 # login
 GET     /login                      controllers.LoginController.loginPost
+GET     /logout                      controllers.LoginController.logout
 GET     /openIdCallback             controllers.LoginController.openIdCallback
 
 # mm queue

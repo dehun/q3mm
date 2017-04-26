@@ -39,6 +39,8 @@ class LoginController @Inject() (ws:WSClient)(openIdClient: OpenIdClient) extend
       .map(url => Redirect(url))
   }
 
+  def logout = Action { Redirect(routes.HomeController.index()).withNewSession }
+
   def openIdCallback = Action.async { implicit request =>
     openIdClient.verifiedId(request).flatMap(
       info => {

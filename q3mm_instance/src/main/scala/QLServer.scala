@@ -42,7 +42,7 @@ object QLServer {
     // spawn
     val log = Logging(context.system, context.self)
     log.info(s"spawning new server! $endpoints")
-    val serverName = s"${endpoints.glicko} Elo/glicko; vs ${owners.head.personaName}; http://hurtmeplenty.space slave"
+    val serverName = s"${endpoints.glicko} Elo/glicko. vs ${owners.head.personaName}. http://hurtmeplenty.space slave"
     val cmdLine = Seq("./qzeroded.x64",
       "+set", "net_strict", "1",
       "+set", "net_ip", s"${endpoints.interface}",
